@@ -78,7 +78,17 @@ CREATE POLICY "Admin can update study materials" ON study_materials FOR UPDATE U
 CREATE POLICY "Admin can delete study materials" ON study_materials FOR DELETE USING (true);
 
 -- Enable realtime for study_materials
-ALTER PUBLICATION supabase_realtime ADD TABLE study_materials;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'study_materials'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE study_materials;
+  END IF;
+END $$;
+
 
 -- Create Storage Bucket
 INSERT INTO storage.buckets (id, name, public) VALUES ('pdfs', 'pdfs', true) ON CONFLICT DO NOTHING;
