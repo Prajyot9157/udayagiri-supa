@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, getSupabaseConfig, rebuildSupabaseClient, clearSupabaseOverrides } from '../lib/supabase';
 import { db } from '../lib/dbHelper';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -14,6 +14,31 @@ export default function AdminPanel() {
   // Navigation
   const [activeTab, setActiveTab] = useState<'dashboard' | 'upload' | 'questions' | 'analytics' | 'settings'>('dashboard');
   const [toast, setToast] = useState<{ msg: string; show: boolean; isError?: boolean }>({ msg: '', show: false });
+
+  // Custom Supabase override states
+  const [supabaseConfig, setSupabaseConfig] = useState(getSupabaseConfig());
+  const [customUrlInput, setCustomUrlInput] = useState(supabaseConfig.url);
+  const [customKeyInput, setCustomKeyInput] = useState(supabaseConfig.key);
+  const [diagResults, setDiagResults] = useState<any>(null);
+  const [runningDiag, setRunningDiag] = useState(false);
+
+  const runDiagnostics = async () => {
+    setRunningDiag(true);
+    try {
+      const res = await db.getDiagnostics();
+      setDiagResults(res);
+    } catch (e: any) {
+      showToast("Diagnostics error: " + e.message, true);
+    } finally {
+      setRunningDiag(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      runDiagnostics();
+    }
+  }, [activeTab]);
 
   // Upload Center Form States
   const [uploadCategory, setUploadCategory] = useState<'notes' | 'formula' | 'mindmaps' | 'practice' | 'pyq' | 'tests' | 'live' | 'timeline' | 'notifications'>('notes');
@@ -1017,8 +1042,125 @@ export default function AdminPanel() {
         {/* ADMIN TAB 5: Settings & Quick manual schema provisions SQL tool */}
         {activeTab === 'settings' && (
           <div className="space-y-8 fade-in max-w-2xl mx-auto text-left">
+            {/* Supabase connection manager */}
             <div className="glass-card rounded-3xl p-6 md:p-8 border border-white/5 space-y-6">
-              
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <i className="fa-solid fa-cloud text-[#FF4D7A]"></i>
+                  Supabase Backend Configuration & Diagnostics
+                </h3>
+                <p className="text-xs text-[#B3B3B3] mt-1">
+                  Adjust, diagnose, and repair your Supabase credentials in real-time. If the default database is offline, connect your own free Supabase database instantly.
+                </p>
+              </div>
+
+              {/* Status Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                  <span className="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider block">Connection Source</span>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF4D7A] shadow-[0_0_8px_#FF4D7A]"></span>
+                    <span className="text-xs font-bold text-white">{supabaseConfig.isOverridden ? 'Custom Browser Override (LocalStorage)' : supabaseConfig.source}</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/5 border border-white/5 space-y-2">
+                  <span className="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider block">Diagnostics Result</span>
+                  <div className="flex items-center gap-2">
+                    {runningDiag ? (
+                      <span className="text-xs font-bold text-[#FF4D7A] animate-pulse">Running checks...</span>
+                    ) : diagResults?.connectOk ? (
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs">
+                        <i className="fa-solid fa-circle-check"></i>
+                        <span>Connected & Operational</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-red-500 font-bold text-xs animate-pulse">
+                        <i className="fa-solid fa-triangle-exclamation"></i>
+                        <span>Configuration Needed</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Table Diagnosis Grid */}
+              {diagResults && (
+                <div className="p-4 rounded-2xl bg-[#070B14]/60 border border-white/5 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-extrabold text-white">Database Table Checks ({Object.values(diagResults.tables).filter((t: any) => t.ok).length}/{Object.keys(diagResults.tables).length} setup)</span>
+                    <button 
+                      onClick={runDiagnostics} 
+                      disabled={runningDiag}
+                      className="text-[10px] text-[#FF4D7A] hover:underline font-bold cursor-pointer"
+                    >
+                      {runningDiag ? 'Checking...' : 'Re-verify Now'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px]">
+                    {Object.entries(diagResults.tables).map(([tableName, status]: [string, any]) => (
+                      <div key={tableName} className={`p-2 rounded-lg flex items-center justify-between border ${status.ok ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-300' : 'bg-red-500/5 border-red-500/10 text-red-300'}`}>
+                        <span className="font-mono truncate">{tableName}</span>
+                        <span>{status.ok ? `(${status.count})` : '⚠️'}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {diagResults.globalErr && (
+                    <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/10 text-[10px] text-red-300 font-mono break-all leading-normal">
+                      <span className="font-bold">Error detail:</span> {diagResults.globalErr}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Credentials Overrider Form */}
+              <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-4">
+                <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                  <i className="fa-solid fa-key text-[#FF4D7A]"></i> Custom Keys Plug-and-Play
+                </h4>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-[#B3B3B3] font-bold uppercase tracking-wider">Supabase URL</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. https://xxxxxx.supabase.co" 
+                      value={customUrlInput}
+                      onChange={e => setCustomUrlInput(e.target.value)}
+                      className="w-full text-xs bg-[#070B14] border border-white/10 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#FF4D7A]/50 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-[#B3B3B3] font-bold uppercase tracking-wider">Supabase Anon Key</label>
+                    <textarea 
+                      placeholder="e.g. eyJhbGciOi..."
+                      value={customKeyInput}
+                      onChange={e => setCustomKeyInput(e.target.value)}
+                      rows={2}
+                      className="w-full text-xs bg-[#070B14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#FF4D7A]/50 font-mono lg:leading-normal"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2.5 pt-1">
+                  <button 
+                    onClick={() => rebuildSupabaseClient(customUrlInput, customKeyInput)}
+                    className="px-4 py-2 bg-[#FF4D7A] hover:bg-[#FF4D7A]/90 text-white font-bold rounded-xl text-[11px] transition-all cursor-pointer"
+                  >
+                    Save & Initialize Client
+                  </button>
+                  {supabaseConfig.isOverridden && (
+                    <button 
+                      onClick={clearSupabaseOverrides}
+                      className="px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold rounded-xl text-[11px] transition-all cursor-pointer"
+                    >
+                      Reset to Default URL / Keys
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-white/5 my-4"></div>
+
               <div>
                 <h3 className="text-sm font-black text-white">Supabase Schema Initialization SQL Script</h3>
                 <p className="text-xs text-[#B3B3B3] mt-1">

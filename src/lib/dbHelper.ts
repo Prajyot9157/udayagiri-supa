@@ -6,21 +6,64 @@ import {
 } from '../types';
 
 // Safe query execution wrapper
+export let lastDatabaseError: string | null = null;
+
 async function safeQuery<T>(queryPromise: any, fallback: T[] = []): Promise<T[]> {
   try {
     const { data, error } = await queryPromise;
     if (error) {
       console.warn('Database query error (table might not exist yet):', error.message);
+      lastDatabaseError = error.message;
       return fallback;
     }
     return data || fallback;
-  } catch (err) {
+  } catch (err: any) {
     console.error('Safe query error:', err);
+    lastDatabaseError = err?.message || String(err);
     return fallback;
   }
 }
 
 export const db = {
+  // Connectivity & Health Diagnostics
+  async getDiagnostics() {
+    const tables = [
+      'users', 'subjects', 'materials', 'videos', 'tests', 'questions', 
+      'live_classes', 'timeline_events', 'notifications', 'saved_materials', 
+      'practice_materials', 'mind_maps', 'formula_sheets', 'pyq_bank'
+    ];
+    
+    const results: { [key: string]: { ok: boolean; message: string; count?: number } } = {};
+    let connectOk = true;
+    let globalErr: string | null = null;
+
+    for (const table of tables) {
+      try {
+        const { data, error, count } = await supabase
+          .from(table)
+          .select('*', { count: 'exact', head: true });
+        
+        if (error) {
+          results[table] = { ok: false, message: error.message };
+          if (error.message.includes('API key') || error.message.includes('Failed to fetch') || error.message.includes('Fetch failed')) {
+            connectOk = false;
+          }
+        } else {
+          results[table] = { ok: true, message: 'Table initialized', count: count || 0 };
+        }
+      } catch (err: any) {
+        connectOk = false;
+        globalErr = err?.message || String(err);
+        results[table] = { ok: false, message: globalErr };
+      }
+    }
+
+    return {
+      connectOk,
+      globalErr: globalErr || lastDatabaseError,
+      tables: results
+    };
+  },
   // 1. Users
   async getUsers(): Promise<UserProfile[]> {
     return safeQuery<UserProfile>(

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { db } from '../lib/dbHelper';
+import { supabase, getSupabaseConfig, rebuildSupabaseClient, clearSupabaseOverrides } from '../lib/supabase';
+import { db, lastDatabaseError } from '../lib/dbHelper';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -11,6 +11,31 @@ import {
 
 export default function StudentApp() {
   const navigate = useNavigate();
+  
+  // Custom Supabase override states
+  const [supabaseConfig, setSupabaseConfig] = useState(getSupabaseConfig());
+  const [showDiagModal, setShowDiagModal] = useState(false);
+  const [customUrlInput, setCustomUrlInput] = useState(supabaseConfig.url);
+  const [customKeyInput, setCustomKeyInput] = useState(supabaseConfig.key);
+  const [diagResults, setDiagResults] = useState<any>(null);
+  const [runningDiag, setRunningDiag] = useState(false);
+
+  const runDiagnostics = async () => {
+    setRunningDiag(true);
+    try {
+      const res = await db.getDiagnostics();
+      setDiagResults(res);
+    } catch (e: any) {
+      showToast("Diagnostics error: " + e.message, true);
+    } finally {
+      setRunningDiag(false);
+    }
+  };
+
+  useEffect(() => {
+    // Run initial database diagnostic checks silently
+    runDiagnostics();
+  }, []);
   
   // Navigation State
   const [currentView, setCurrentView] = useState<'home' | 'live' | 'tests' | 'notes' | 'pyq' | 'practice' | 'formula' | 'mindmaps' | 'timeline' | 'saved' | 'notifications' | 'profile' | 'search' | 'subject-detail'>('home');
@@ -417,6 +442,19 @@ export default function StudentApp() {
           </div>
 
           <div className="flex items-center gap-2.5">
+            {/* Supabase Diagnostics Indicator */}
+            <button 
+              onClick={() => {
+                runDiagnostics();
+                setShowDiagModal(true);
+              }}
+              title="Database Connection Diagnostics"
+              className={`px-2.5 py-1.5 h-9 rounded-lg flex items-center gap-1.5 border transition-all cursor-pointer text-xs font-bold ${diagResults?.connectOk ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10' : 'border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10'}`}
+            >
+              <i className={`fa-solid ${diagResults?.connectOk ? 'fa-database' : 'fa-triangle-exclamation animate-pulse'}`}></i>
+              <span className="hidden sm:inline">{diagResults?.connectOk ? 'Database Connected' : 'Database Setup Alert'}</span>
+            </button>
+
             {/* Search Trigger */}
             <button 
               onClick={() => setCurrentView('search')}
@@ -1407,6 +1445,144 @@ export default function StudentApp() {
             )}
           </AnimatePresence>
         </main>
+
+        {/* Supabase Connection Diagnostics Modal */}
+        <AnimatePresence>
+          {showDiagModal && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="w-full max-w-lg bg-[#070B14] border border-white/10 rounded-3xl p-6 overflow-y-auto max-h-[85vh] space-y-6 shadow-2xl relative text-left"
+              >
+                <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                  <h3 className="text-sm font-black text-white flex items-center gap-2">
+                    <i className="fa-solid fa-triangle-exclamation text-[#FF4D7A]"></i>
+                    Supabase Connections & Diagnostics
+                  </h3>
+                  <button 
+                    onClick={() => setShowDiagModal(false)}
+                    className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/70 hover:text-white cursor-pointer"
+                  >
+                    <i className="fa-solid fa-xmark text-xs"></i>
+                  </button>
+                </div>
+
+                <div className="space-y-4 text-xs">
+                  <p className="text-[#B3B3B3] leading-relaxed">
+                    Verify connectivity status and schema health. If unconfigured or showing relation errors, copy the database creation SQL from the Admin Settings tab or plug in your own free Supabase credentials to run instantly.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div className="p-3 bg-white/5 border border-white/5 rounded-xl space-y-1">
+                      <span className="text-[9px] font-bold text-[#B3B3B3] uppercase tracking-wider block">Source</span>
+                      <span className="font-extrabold text-white truncate block">{supabaseConfig.isOverridden ? 'LocalStorage' : 'Config / Sandbox'}</span>
+                    </div>
+                    <div className="p-3 bg-white/5 border border-white/5 rounded-xl space-y-1">
+                      <span className="text-[9px] font-bold text-[#B3B3B3] uppercase tracking-wider block">Connection status</span>
+                      <span className={`font-extrabold block ${diagResults?.connectOk ? 'text-emerald-400' : 'text-red-500 animate-pulse'}`}>
+                        {runningDiag ? 'Checking...' : diagResults?.connectOk ? 'Connected' : 'Action Required'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Schema checklist */}
+                  <div className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-white">Database Tables Status Check</span>
+                      <button 
+                        onClick={runDiagnostics}
+                        disabled={runningDiag}
+                        className="text-[10px] text-[#FF4D7A] hover:underline font-extrabold cursor-pointer"
+                      >
+                        {runningDiag ? 'Validating...' : 'Refresh'}
+                      </button>
+                    </div>
+
+                    {diagResults ? (
+                      <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                        {Object.entries(diagResults.tables).map(([tableName, status]: [string, any]) => (
+                          <div key={tableName} className={`p-1.5 px-2 rounded-md flex items-center justify-between border ${status.ok ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400' : 'bg-red-500/5 border-red-500/10 text-red-400'}`}>
+                            <span className="font-mono truncate">{tableName}</span>
+                            <span>{status.ok ? `(${status.count})` : '⚠️'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-[#B3B3B3] italic text-[11px]">
+                        Running queries to verify relational schemas...
+                      </div>
+                    )}
+                    
+                    {diagResults?.globalErr && (
+                      <div className="p-2.5 bg-red-500/5 border border-red-500/10 rounded-lg text-[10px] font-mono text-red-300 break-all leading-normal">
+                        <span className="font-bold">Error trace:</span> {diagResults.globalErr}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Settings form container */}
+                  <div className="p-4 bg-white/5 border border-white/15 rounded-2xl space-y-4">
+                    <h4 className="font-bold text-white flex items-center gap-2">
+                      <i className="fa-solid fa-key text-[#FF4D7A]"></i> Override Supabase Credentials
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[#B3B3B3] uppercase tracking-wider font-extrabold">Project REST URL</label>
+                        <input 
+                          type="text" 
+                          placeholder="https://your-project.supabase.co" 
+                          value={customUrlInput}
+                          onChange={e => setCustomUrlInput(e.target.value)}
+                          className="w-full text-xs font-mono bg-[#070B14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#FF4D7A]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] text-[#B3B3B3] uppercase tracking-wider font-extrabold">Anon Public Token</label>
+                        <textarea 
+                          placeholder="eyJhbGciOi..."
+                          rows={2}
+                          value={customKeyInput}
+                          onChange={e => setCustomKeyInput(e.target.value)}
+                          className="w-full text-xs font-mono bg-[#070B14] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-[#FF4D7A] leading-relaxed"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button 
+                        onClick={() => {
+                          rebuildSupabaseClient(customUrlInput, customKeyInput);
+                          setShowDiagModal(false);
+                        }}
+                        className="px-4 py-2 bg-[#FF4D7A] hover:bg-[#FF4D7A]/90 text-white font-extrabold rounded-xl transition-all cursor-pointer"
+                      >
+                        Apply Changes
+                      </button>
+                      {supabaseConfig.isOverridden && (
+                        <button 
+                          onClick={() => {
+                            clearSupabaseOverrides();
+                            setShowDiagModal(false);
+                          }}
+                          className="px-4 py-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white font-extrabold rounded-xl transition-all cursor-pointer"
+                        >
+                          Reset Default
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-center text-[#B3B3B3]">
+                    Pro Tip: As an admin, you can view & copy the table SQL creation script under the <span className="text-white font-bold">Admin Panel Settings Tab</span>.
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Global Floating Toast Alert */}
         <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full bg-[#111827] border border-white/10 shadow-2xl text-xs font-extrabold text-white flex items-center gap-2 transition-all duration-300 ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
