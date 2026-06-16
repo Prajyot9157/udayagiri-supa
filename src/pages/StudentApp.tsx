@@ -420,70 +420,51 @@ export default function StudentApp() {
   );
 
   return (
-    <div className="app-container w-full h-screen bg-[#070B14] text-white flex flex-col relative overflow-hidden select-none">
+    <div className="app-container w-full h-screen bg-[#0E0D13] text-white flex flex-col relative overflow-hidden select-none">
       
-      {/* 20px Rounded Floating Visual Wrapper on Desktop/Tablet */}
-      <div className="flex-1 flex flex-col h-full w-full max-w-5xl mx-auto shadow-2xl relative">
+      {/* Container constraints for clean preview */}
+      <div className="flex-1 flex flex-col h-full w-full max-w-md mx-auto relative border-l border-r border-[#1B1A22] bg-[#0A090E]">
         
         {/* Top Header */}
-        <header className="h-16 flex justify-between items-center bg-[#070B14]/80 backdrop-blur-md border-b border-white/5 px-6 z-40 shrink-0">
+        <header className="h-16 flex justify-between items-center bg-[#0A090E] px-5 z-40 shrink-0">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setSidebarOpen(true)}
-              className="w-10 h-10 rounded-xl bg-white/5 active:scale-95 flex items-center justify-center text-white/80 border border-white/10 hover:border-[#FF4D7A]/30 transition-all cursor-pointer"
+              className="text-white/80 transition-all cursor-pointer"
             >
-              <i className="fa-solid fa-bars text-lg"></i>
+              <i className="fa-solid fa-bars text-xl"></i>
             </button>
-            <div>
-              <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-2">
-                MHT CET <span className="text-xs bg-gradient-to-r from-[#FF4D7A] to-[#7C3AED] text-white px-2 py-0.5 rounded-md font-extrabold shadow-[0_0_10px_rgba(255,77,122,0.2)]">12 Science</span>
+            <div className="pl-2">
+              <h1 className="text-[17px] font-bold tracking-wide text-white flex items-center gap-1.5">
+                MHT CET <span className="text-[#FF4D7A] font-semibold">12 Science</span>
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Supabase Diagnostics Indicator */}
+          <div className="flex items-center gap-5">
+            {/* Supabase Indicator (Visible on desktop/tablet but hidden on tight mobile) */}
             <button 
               onClick={() => {
                 runDiagnostics();
                 setShowDiagModal(true);
               }}
-              title="Database Connection Diagnostics"
-              className={`px-2.5 py-1.5 h-9 rounded-lg flex items-center gap-1.5 border transition-all cursor-pointer text-xs font-bold ${diagResults?.connectOk ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10' : 'border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10'}`}
+              className="hidden sm:block"
             >
-              <i className={`fa-solid ${diagResults?.connectOk ? 'fa-database' : 'fa-triangle-exclamation animate-pulse'}`}></i>
-              <span className="hidden sm:inline">{diagResults?.connectOk ? 'Database Connected' : 'Database Setup Alert'}</span>
+              <i className={`fa-solid ${diagResults?.connectOk ? 'fa-database text-emerald-500' : 'fa-triangle-exclamation text-red-500 animate-pulse'}`}></i>
             </button>
 
-            {/* Search Trigger */}
-            <button 
-              onClick={() => setCurrentView('search')}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center border transition-all cursor-pointer ${currentView === 'search' ? 'border-[#FF4D7A] bg-[#FF4D7A]/10 text-[#FF4D7A]' : 'border-white/5 hover:border-white/20 text-white/70'}`}
-            >
-              <i className="fa-solid fa-magnifying-glass text-sm"></i>
+            <button className="text-white/80 cursor-pointer hover:text-white transition-colors">
+              <i className="fa-solid fa-gift text-lg"></i>
             </button>
 
-            {/* Notification Dot Trigger */}
             <button 
               onClick={() => setCurrentView('notifications')}
-              className="w-9 h-9 rounded-lg flex items-center justify-center border border-white/5 hover:border-white/20 text-white/70 relative cursor-pointer"
+              className="text-white/80 hover:text-white cursor-pointer relative transition-colors"
             >
-              <i className="fa-solid fa-bell text-sm"></i>
+              <i className="fa-solid fa-bell text-lg"></i>
               {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#FF4D7A] text-[9px] font-bold text-white flex items-center justify-center glow-pulse animate-pulse">
-                  {notifications.length}
-                </span>
+                <span className="absolute -top-1 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#FF4D7A] ring-2 ring-[#0A090E]"></span>
               )}
-            </button>
-
-            {/* Profile Avatar */}
-            <button 
-              onClick={() => setCurrentView('profile')}
-              className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#7C3AED] to-[#FF4D7A] p-[1.5px] cursor-pointer"
-            >
-              <div className="w-full h-full rounded-[7px] bg-[#111827] flex items-center justify-center text-xs font-bold text-white uppercase.">
-                {currentUser?.name ? currentUser.name.charAt(0) : 'P'}
-              </div>
             </button>
           </div>
         </header>
@@ -492,9 +473,9 @@ export default function StudentApp() {
         <main className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
             {loading ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-[#FF4D7A] bg-[#070B14]/90 z-50">
-                <div className="w-12 h-12 rounded-2xl border-2 border-dashed border-[#FF4D7A] animate-spin mb-4"></div>
-                <p className="text-xs text-[#B3B3B3] font-medium tracking-widest uppercase">Connecting to Supabase...</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-[#FF4D7A] bg-[#0A090E]/90 z-50">
+                <div className="w-10 h-10 rounded-full border-2 border-t-transparent border-[#FF4D7A] animate-spin mb-4"></div>
+                <p className="text-xs text-[#B3B3B3] font-medium tracking-widest uppercase">Loading...</p>
               </div>
             ) : null}
 
@@ -504,59 +485,56 @@ export default function StudentApp() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="h-full overflow-y-auto hide-scrollbar pb-24 px-5 pt-4 space-y-6"
+                className="h-full overflow-y-auto hide-scrollbar pb-28 px-5 pt-2 space-y-7"
               >
-                {/* Hero Card */}
-                <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#111827]/90 to-[#070B14] border border-white/10 p-6 flex flex-col justify-between shadow-2xl">
-                  {/* Decorative ambient background glows */}
-                  <div className="absolute -right-24 -bottom-24 w-52 h-52 bg-[#FF4D7A]/15 rounded-full filter blur-3xl pointer-events-none"></div>
-                  <div className="absolute left-1/3 top-1/2 w-48 h-48 bg-[#7C3AED]/12 rounded-full filter blur-3xl pointer-events-none"></div>
-
-                  <div className="relative z-10">
-                    <span className="text-[10px] font-bold tracking-widest text-[#FF4D7A] uppercase bg-[#FF4D7A]/10 px-3 py-1 rounded-full border border-[#FF4D7A]/20">STUDENT DASHBOARD</span>
-                    <h2 className="text-2xl font-black mt-3 text-white leading-tight">
-                      Hello, {currentUser?.name ? currentUser.name.split(' ')[0] : 'Student'} <span className="text-xl">👋</span>
+                {/* Hero Card Banner */}
+                <div className="relative overflow-hidden rounded-[24px] bg-gradient-to-r from-[#171221] via-[#21152A] to-[#120F16] border border-white/5 p-5 pr-0 flex shadow-lg">
+                  <div className="flex-1 flex flex-col">
+                    <h2 className="text-2xl font-bold text-white mb-1">
+                      Hello, {currentUser?.name ? currentUser.name.split(' ')[0] : 'Student'} <span>👋</span>
                     </h2>
-                    <p className="text-xs text-[#B3B3B3] mt-1">Access all premium course syllabus and mock metrics instantly.</p>
+                    <p className="text-xs text-[#A09CA6] mb-5">Access all your study materials here.</p>
+                    
+                    <div className="grid grid-cols-2 gap-4 mt-auto">
+                      <div>
+                        <div className="text-[10px] font-semibold text-[#FF4D7A] flex items-center gap-1.5 mb-1.5"><i className="fa-solid fa-layer-group"></i> Total Materials</div>
+                        <div className="text-2xl font-bold text-white">
+                          {materials.length + practiceMaterials.length + pyqBank.length + mindMaps.length || '8'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-semibold text-[#FF4D7A] flex items-center gap-1.5 mb-1.5"><i className="fa-solid fa-clock-rotate-left"></i> New This Week</div>
+                        <div className="text-2xl font-bold text-white">
+                          {materials.filter(m => new Date(m.created_at || Date.now()) > new Date(Date.now() - 7*24*60*60*1000)).length || '8'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Dynamic counts derived live from database arrays */}
-                  <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-white/5 relative z-10 text-center sm:text-left">
-                    <div>
-                      <div className="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider mb-1 flex items-center justify-center sm:justify-start gap-1"><i className="fa-solid fa-book-open text-[#FF4D7A]"></i> Modules</div>
-                      <div className="text-xl font-extrabold text-white">
-                        {materials.length + practiceMaterials.length + pyqBank.length + mindMaps.length}
-                      </div>
+                  {/* Right side Logo */}
+                  <div className="w-[100px] flex flex-col items-center justify-center border-l border-[#ffffff10]">
+                    <div className="w-12 h-12 rounded-full bg-black/40 flex items-center justify-center mb-2 shadow-inner border border-white/5 relative">
+                       <i className="fa-solid fa-graduation-cap text-lg text-white/90"></i>
+                       <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#FF4D7A]/20 to-transparent"></div>
                     </div>
-                    <div className="border-l border-white/5 pl-3">
-                      <div className="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider mb-1 flex items-center justify-center sm:justify-start gap-1"><i className="fa-solid fa-file-signature text-[#7C3AED]"></i> Tests</div>
-                      <div className="text-xl font-extrabold text-white">{tests.length}</div>
-                    </div>
-                    <div className="border-l border-white/5 pl-3">
-                      <div className="text-[10px] font-bold text-[#B3B3B3] uppercase tracking-wider mb-1 flex items-center justify-center sm:justify-start gap-1"><i className="fa-solid fa-tv text-[#FF4D7A]"></i> Live</div>
-                      <div className="text-xl font-extrabold text-[#FF4D7A]">
-                        {liveClasses.filter(c => c.status === 'live').length || liveClasses.filter(c => c.status === 'upcoming').length}
-                      </div>
-                    </div>
+                    <span className="text-[9px] font-bold text-white tracking-wider">Materials</span>
                   </div>
                 </div>
 
-                {/* VIEW 1.2: Quick Access Grid */}
+                {/* Quick Access Grid */}
                 <div>
-                  <h3 className="text-sm font-bold tracking-widest text-[#FF4D7A] uppercase mb-4 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D7A]"></span> Quick Access Catalog
-                  </h3>
+                  <h3 className="text-sm font-semibold text-white mb-4">Quick Access</h3>
                   
-                  <div className="grid grid-cols-4 gap-3 text-center">
+                  <div className="grid grid-cols-4 gap-y-5 gap-x-2">
                     {[
-                      { id: 'live', icon: 'fa-tv', title: 'Live Classes', color: 'text-[#FF4D7A]' },
-                      { id: 'tests', icon: 'fa-file-pen', title: 'Mock Tests', color: 'text-[#7C3AED]' },
-                      { id: 'notes', icon: 'fa-book', title: 'Study Notes', color: 'text-[#3B82F6]' },
-                      { id: 'pyq', icon: 'fa-bullseye', title: 'PYQ Bank', color: 'text-[#F59E0B]' },
-                      { id: 'practice', icon: 'fa-crosshairs', title: 'Practice Sets', color: 'text-[#10B981]' },
-                      { id: 'formula', icon: 'fa-file-lines', title: 'Formulas', color: 'text-[#EC4899]' },
-                      { id: 'mindmaps', icon: 'fa-network-wired', title: 'Mind Maps', color: 'text-[#8B5CF6]' },
-                      { id: 'timeline', icon: 'fa-calendar-days', title: 'Timeline', color: 'text-[#14B8A6]' },
+                      { id: 'live', icon: 'fa-tv', title: 'Live Classes' },
+                      { id: 'tests', icon: 'fa-pen-to-square', title: 'Tests' },
+                      { id: 'notes', icon: 'fa-book-open', title: 'Notes' },
+                      { id: 'pyq', icon: 'fa-bullseye', title: 'PYQ Bank' },
+                      { id: 'practice', icon: 'fa-crosshairs', title: 'Practice' },
+                      { id: 'formula', icon: 'fa-file-lines', title: 'Formula Sheet' },
+                      { id: 'mindmaps', icon: 'fa-diagram-project', title: 'Mind Maps' },
+                      { id: 'timeline', icon: 'fa-calendar-days', title: 'Timeline' },
                     ].map(item => (
                       <div 
                         key={item.id}
@@ -565,12 +543,12 @@ export default function StudentApp() {
                             setCurrentView(item.id as any);
                           }
                         }}
-                        className="glass-card rounded-[20px] p-3 flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/5 hover:border-[#FF4D7A]/30 shadow-md group"
+                        className="flex flex-col items-center justify-start cursor-pointer group"
                       >
-                        <div className={`w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center ${item.color} text-lg mb-2 shadow-inner group-hover:glow-pulse`}>
+                        <div className={`w-14 h-14 rounded-2xl bg-[#16131D] border border-white/5 flex items-center justify-center text-[22px] text-[#FF4D7A] mb-2.5 transition-transform active:scale-95 group-hover:bg-[#1C1724]`}>
                           <i className={`fa-solid ${item.icon}`}></i>
                         </div>
-                        <span className="text-[10px] font-extrabold text-[#B3B3B3] whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                        <span className="text-[10px] font-medium text-[#A09CA6] whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
                           {item.title}
                         </span>
                       </div>
@@ -578,48 +556,45 @@ export default function StudentApp() {
                   </div>
                 </div>
 
-                {/* VIEW 1.3: Recently Added Section */}
+                {/* Recently Added Section */}
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-bold tracking-widest text-[#FF4D7A] uppercase flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF4D7A]"></span> Recently Added Modules
-                    </h3>
-                  </div>
+                  <h3 className="text-sm font-semibold text-white">Recently Added</h3>
 
                   {materials.length === 0 ? (
-                    <div className="glass-card rounded-2xl p-6 text-center border border-white/5">
-                      <p className="text-xs text-[#B3B3B3]">No documents posted yet. Click seed below or upload.</p>
+                    <div className="bg-[#16131D] rounded-3xl p-6 text-center border border-white/5">
+                      <p className="text-xs text-[#8A8F9E]">No materials available.</p>
                     </div>
                   ) : (
-                    <div className="flex overflow-x-auto hide-scrollbar gap-4 pb-4">
+                    <div className="flex overflow-x-auto hide-scrollbar gap-4 pb-2">
                       {materials.slice(0, 5).map(item => (
                         <div 
                           key={`recent-${item.id}`}
                           onClick={() => handleViewPdf(item)}
-                          className="glass-card rounded-[22px] p-4 flex flex-col justify-between shrink-0 w-60 border border-white/5 hover:border-[#FF4D7A]/40 hover:shadow-lg hover:shadow-[#FF4D7A]/10 transition-all cursor-pointer group"
+                          className="bg-[#16131D] rounded-[24px] p-5 flex flex-col justify-between shrink-0 w-[240px] border border-white/5 active:scale-[0.98] transition-transform cursor-pointer group"
                         >
                           <div>
-                            <div className="flex justify-between items-start mb-3">
-                              <span className="text-[9px] font-extrabold text-white px-2 py-0.5 roundedbg-gradient bg-indigo-600/50 rounded-md border border-indigo-500/30">
-                                {item.subject}
-                              </span>
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="w-12 h-12 rounded-[14px] bg-[#2A1622] border border-white/5 flex items-center justify-center text-[#FF4D7A] text-xl">
+                                <i className="fa-solid fa-file-pdf"></i>
+                              </div>
                               <button 
                                 onClick={(e) => handleToggleSave(item.id, 'material', e)}
-                                className="text-xs text-white/50 hover:text-[#FF4D7A] transition-colors"
+                                className="text-base text-white/40 hover:text-[#FF4D7A] transition-colors -m-1 p-2"
                               >
                                 <i className={`fa-bookmark ${savedData.some(s => s.material_id === item.id) ? 'fa-solid text-[#FF4D7A]' : 'fa-regular'}`}></i>
                               </button>
                             </div>
-                            <h4 className="text-xs font-black text-white group-hover:text-[#FF4D7A] transition-colors line-clamp-2 leading-tight">
+                            
+                            <h4 className="text-sm font-semibold text-white line-clamp-1 leading-tight mb-1 group-hover:text-[#FF4D7A] transition-colors">
                               {item.title}
                             </h4>
+                            <p className="text-[11px] text-[#A09CA6] line-clamp-1">
+                              {item.subject} <span className="opacity-50">|</span> {item.category}
+                            </p>
                           </div>
                           
-                          <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-[10px] text-[#B3B3B3]">
-                            <span><i className="fa-solid fa-file-pdf text-[#FF4D7A] mr-1"></i> {item.file_size_text || 'PDF'}</span>
-                            <span className="font-bold flex items-center gap-1 text-[#FF4D7A] group-hover:underline">
-                              View <i className="fa-solid fa-arrow-right text-[8px]"></i>
-                            </span>
+                          <div className="flex items-center mt-5 pt-3 border-t border-white/10 text-[11px] font-semibold text-[#FF4D7A] gap-1.5">
+                            <i className="fa-regular fa-eye"></i> View
                           </div>
                         </div>
                       ))}
@@ -1591,45 +1566,37 @@ export default function StudentApp() {
         </div>
 
         {/* Bottom Drawer Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 h-[72px] bg-[#070B14]/90 backdrop-blur-md border-t border-white/5 flex items-center justify-around z-40 pb-1 max-w-5xl mx-auto px-4 shadow-[0_-10px_35px_rgba(0,0,0,0.5)]">
+        <nav className="fixed bottom-0 left-0 right-0 h-[70px] bg-[#0A090E] border-t border-white/5 flex items-center justify-around z-40 pb-2 max-w-md mx-auto px-4 shadow-[0_-10px_35px_rgba(0,0,0,0.5)]">
           <button 
             onClick={() => setCurrentView('home')} 
-            className={`flex flex-col items-center gap-1 w-14 transition-colors cursor-pointer ${currentView === 'home' ? 'text-[#FF4D7A]' : 'text-[#B3B3B3] hover:text-white'}`}
+            className={`flex flex-col items-center gap-1 w-16 transition-colors cursor-pointer ${currentView === 'home' ? 'text-[#FF4D7A]' : 'text-[#8A8F9E] hover:text-white'}`}
           >
-            <i className="fa-solid fa-house text-lg"></i>
-            <span className="text-[9px] font-extrabold mt-0.5 tracking-wide">Home</span>
-          </button>
-          
-          <button 
-            onClick={() => setCurrentView('live')} 
-            className={`flex flex-col items-center gap-1 w-14 transition-colors cursor-pointer ${currentView === 'live' ? 'text-[#FF4D7A]' : 'text-[#B3B3B3] hover:text-white'}`}
-          >
-            <i className="fa-solid fa-video text-lg"></i>
-            <span className="text-[9px] font-extrabold mt-0.5 tracking-wide">Live class</span>
+            <i className="fa-solid fa-house text-xl"></i>
+            <span className="text-[10px] font-medium mt-0.5 tracking-wide">Home</span>
           </button>
           
           <button 
             onClick={() => setCurrentView('tests')} 
-            className={`flex flex-col items-center gap-1 w-14 transition-colors cursor-pointer ${currentView === 'tests' ? 'text-[#FF4D7A]' : 'text-[#B3B3B3] hover:text-white'}`}
+            className={`flex flex-col items-center gap-1 w-16 transition-colors cursor-pointer ${currentView === 'tests' ? 'text-[#FF4D7A]' : 'text-[#8A8F9E] hover:text-white'}`}
           >
-            <i className="fa-solid fa-file-signature text-lg"></i>
-            <span className="text-[9px] font-extrabold mt-0.5 tracking-wide">Tests</span>
+            <i className="fa-solid fa-file-pen text-xl"></i>
+            <span className="text-[10px] font-medium mt-0.5 tracking-wide">Tests</span>
           </button>
-
+          
           <button 
             onClick={() => setCurrentView('notes')} 
-            className={`flex flex-col items-center gap-1 w-14 transition-colors cursor-pointer ${currentView === 'notes' ? 'text-[#FF4D7A]' : 'text-[#B3B3B3] hover:text-white'}`}
+            className={`flex flex-col items-center gap-1 w-16 transition-colors cursor-pointer ${currentView === 'notes' ? 'text-[#FF4D7A]' : 'text-[#8A8F9E] hover:text-white'}`}
           >
-            <i className="fa-solid fa-book-bookmark text-lg"></i>
-            <span className="text-[9px] font-extrabold mt-0.5 tracking-wide">Notes</span>
+            <i className="fa-solid fa-book text-xl"></i>
+            <span className="text-[10px] font-medium mt-0.5 tracking-wide">Notes</span>
           </button>
 
           <button 
             onClick={() => setCurrentView('profile')} 
-            className={`flex flex-col items-center gap-1 w-14 transition-colors cursor-pointer ${currentView === 'profile' ? 'text-[#FF4D7A]' : 'text-[#B3B3B3] hover:text-white'}`}
+            className={`flex flex-col items-center gap-1 w-16 transition-colors cursor-pointer ${currentView === 'profile' ? 'text-[#FF4D7A]' : 'text-[#8A8F9E] hover:text-white'}`}
           >
-            <i className="fa-solid fa-circle-user text-lg"></i>
-            <span className="text-[9px] font-extrabold mt-0.5 tracking-wide">Profile</span>
+            <i className="fa-solid fa-user text-xl"></i>
+            <span className="text-[10px] font-medium mt-0.5 tracking-wide">Profile</span>
           </button>
         </nav>
 

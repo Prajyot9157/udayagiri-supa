@@ -172,63 +172,93 @@ CREATE TABLE IF NOT EXISTS study_materials (
 -- =======================================================
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Users Access" ON users;
 CREATE POLICY "Public Users Access" ON users FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Users Insert" ON users;
 CREATE POLICY "Public Users Insert" ON users FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public Users Update" ON users;
 CREATE POLICY "Public Users Update" ON users FOR UPDATE USING (true);
 
 ALTER TABLE subjects ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Subjects Access" ON subjects;
 CREATE POLICY "Public Subjects Access" ON subjects FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Subjects All" ON subjects;
 CREATE POLICY "Admin Subjects All" ON subjects FOR ALL USING (true);
 
 ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Materials Access" ON materials;
 CREATE POLICY "Public Materials Access" ON materials FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Materials All" ON materials;
 CREATE POLICY "Admin Materials All" ON materials FOR ALL USING (true);
 
 ALTER TABLE videos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Videos Access" ON videos;
 CREATE POLICY "Public Videos Access" ON videos FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Videos All" ON videos;
 CREATE POLICY "Admin Videos All" ON videos FOR ALL USING (true);
 
 ALTER TABLE tests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Tests Access" ON tests;
 CREATE POLICY "Public Tests Access" ON tests FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Tests All" ON tests;
 CREATE POLICY "Admin Tests All" ON tests FOR ALL USING (true);
 
 ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Questions Access" ON questions;
 CREATE POLICY "Public Questions Access" ON questions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Questions All" ON questions;
 CREATE POLICY "Admin Questions All" ON questions FOR ALL USING (true);
 
 ALTER TABLE live_classes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Classes Access" ON live_classes;
 CREATE POLICY "Public Classes Access" ON live_classes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Classes All" ON live_classes;
 CREATE POLICY "Admin Classes All" ON live_classes FOR ALL USING (true);
 
 ALTER TABLE timeline_events ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Events Access" ON timeline_events;
 CREATE POLICY "Public Events Access" ON timeline_events FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Events All" ON timeline_events;
 CREATE POLICY "Admin Events All" ON timeline_events FOR ALL USING (true);
 
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Notifications Access" ON notifications;
 CREATE POLICY "Public Notifications Access" ON notifications FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Notifications All" ON notifications;
 CREATE POLICY "Admin Notifications All" ON notifications FOR ALL USING (true);
 
 ALTER TABLE saved_materials ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Saved Access" ON saved_materials;
 CREATE POLICY "Public Saved Access" ON saved_materials FOR ALL USING (true);
 
 ALTER TABLE practice_materials ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Practice Access" ON practice_materials;
 CREATE POLICY "Public Practice Access" ON practice_materials FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Practice All" ON practice_materials;
 CREATE POLICY "Admin Practice All" ON practice_materials FOR ALL USING (true);
 
 ALTER TABLE mind_maps ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Mind Maps Access" ON mind_maps;
 CREATE POLICY "Public Mind Maps Access" ON mind_maps FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Mind Maps All" ON mind_maps;
 CREATE POLICY "Admin Mind Maps All" ON mind_maps FOR ALL USING (true);
 
 ALTER TABLE formula_sheets ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Formula Access" ON formula_sheets;
 CREATE POLICY "Public Formula Access" ON formula_sheets FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Formula All" ON formula_sheets;
 CREATE POLICY "Admin Formula All" ON formula_sheets FOR ALL USING (true);
 
 ALTER TABLE pyq_bank ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public PYQ Access" ON pyq_bank;
 CREATE POLICY "Public PYQ Access" ON pyq_bank FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin PYQ All" ON pyq_bank;
 CREATE POLICY "Admin PYQ All" ON pyq_bank FOR ALL USING (true);
 
 ALTER TABLE study_materials ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public Study Materials Select" ON study_materials;
 CREATE POLICY "Public Study Materials Select" ON study_materials FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Admin Study Materials All" ON study_materials;
 CREATE POLICY "Admin Study Materials All" ON study_materials FOR ALL USING (true);
 
 
@@ -272,7 +302,14 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('thumbnails', 'thumbnails
 INSERT INTO storage.buckets (id, name, public) VALUES ('pdfs', 'pdfs', true) ON CONFLICT (id) DO NOTHING;
 
 -- Storage Security Policies
+DROP POLICY IF EXISTS "Public Buckets Select" ON storage.objects;
 CREATE POLICY "Public Buckets Select" ON storage.objects FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Buckets Insert" ON storage.objects;
 CREATE POLICY "Public Buckets Insert" ON storage.objects FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Buckets Update" ON storage.objects;
 CREATE POLICY "Public Buckets Update" ON storage.objects FOR UPDATE USING (true);
+
+DROP POLICY IF EXISTS "Public Buckets Delete" ON storage.objects;
 CREATE POLICY "Public Buckets Delete" ON storage.objects FOR DELETE USING (true);
