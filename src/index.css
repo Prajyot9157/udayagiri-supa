@@ -2,8 +2,8 @@
 
 @layer base {
   body {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: #070B14;
+    color: #ffffff;
     margin: 0;
     padding: 0;
     height: 100dvh;
@@ -11,17 +11,113 @@
     display: flex;
     justify-content: center;
     overflow: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
 @layer utilities {
-  .hide-scrollbar::-webkit-scrollbar { display: none; }
-  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-  .fade-in { animation: fadeIn 0.3s ease-in-out; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  .bg-dark-bg {
+    background-color: #070B14;
+  }
   
-  .slide-in-right { animation: slideInRight 0.3s ease forwards; }
-  @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  .bg-dark-card {
+    background-color: rgba(17, 24, 39, 0.65);
+  }
+
+  /* Glassmorphism Classes */
+  .glass-card {
+    background: rgba(17, 24, 39, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card-hover:hover {
+    background: rgba(22, 30, 49, 0.8);
+    border-color: rgba(255, 77, 122, 0.3);
+    box-shadow: 0 10px 30px -10px rgba(124, 58, 237, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .glass-input {
+    background: rgba(7, 11, 20, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    transition: all 0.2s ease;
+  }
+  
+  .glass-input:focus {
+    border-color: #FF4D7A;
+    box-shadow: 0 0 15px rgba(255, 77, 122, 0.15);
+    outline: none;
+  }
+
+  /* Scrollbar overrides */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 99px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 77, 122, 0.3);
+  }
+
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .slide-in-right {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes slideInRight {
+    from {
+      transform: translateX(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .glow-pulse {
+    animation: glowPulse 2s infinite ease-in-out;
+  }
+  @keyframes glowPulse {
+    0%, 100% {
+      box-shadow: 0 0 15px rgba(255, 77, 122, 0.25);
+    }
+    50% {
+      box-shadow: 0 0 25px rgba(124, 58, 237, 0.45);
+    }
+  }
 }

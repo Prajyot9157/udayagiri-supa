@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "EduFlow Pro",
+  "description": "A premium glassmorphic Edtech Platform for students and admins with live Supabase database and storage integrations.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
