@@ -566,9 +566,9 @@ export default function StudentApp() {
                     </div>
                   ) : (
                     <div className="flex overflow-x-auto hide-scrollbar gap-4 pb-2">
-                      {materials.slice(0, 5).map(item => (
+                      {materials.slice(0, 5).map((item, idx) => (
                         <div 
-                          key={`recent-${item.id}`}
+                          key={`recent-${item.id || idx}-${idx}`}
                           onClick={() => handleViewPdf(item)}
                           className="bg-[#16131D] rounded-[24px] p-5 flex flex-col justify-between shrink-0 w-[240px] border border-white/5 active:scale-[0.98] transition-transform cursor-pointer group"
                         >
@@ -649,9 +649,9 @@ export default function StudentApp() {
                   renderEmptyState('Live Classes', 'fa-video')
                 ) : (
                   <div className="space-y-4">
-                    {liveClasses.filter(c => activeTab === 'all' || c.status === activeTab).map(classObj => (
+                    {liveClasses.filter(c => activeTab === 'all' || c.status === activeTab).map((classObj, idx) => (
                       <div 
-                        key={`class-${classObj.id}`} 
+                        key={`class-${classObj.id || idx}-${idx}`} 
                         className="glass-card rounded-[22px] p-5 border border-white/5 relative overflow-hidden group hover:border-[#FF4D7A]/30 transition-all"
                       >
                         <div className="flex justify-between items-start mb-3">
@@ -731,9 +731,9 @@ export default function StudentApp() {
                       renderEmptyState('Tests Available', 'fa-file-pen')
                     ) : (
                       <div className="space-y-4">
-                        {tests.map(testObj => (
+                        {tests.map((testObj, idx) => (
                           <div 
-                            key={`test-${testObj.id}`} 
+                            key={`test-${testObj.id || idx}-${idx}`} 
                             className="glass-card rounded-[22px] p-5 border border-white/5 hover:border-[#FF4D7A]/30 transition-all group"
                           >
                             <div className="flex justify-between items-start mb-3">
@@ -906,9 +906,9 @@ export default function StudentApp() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {materials
                       .filter(m => m.category === 'notes' && (filterSubject === 'All' || m.subject === filterSubject) && (m.title.toLowerCase().includes(searchQuery.toLowerCase())))
-                      .map(item => (
+                      .map((item, idx) => (
                         <div 
-                          key={`mat-${item.id}`}
+                          key={`mat-${item.id || idx}-${idx}`}
                           onClick={() => handleViewPdf(item)}
                           className="glass-card rounded-2xl p-4 flex items-center gap-4 border border-white/5 hover:border-[#FF4D7A]/20 transition-all cursor-pointer group"
                         >
@@ -967,9 +967,9 @@ export default function StudentApp() {
                           </h3>
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {subjectPyqs.map(paper => (
+                            {subjectPyqs.map((paper, idx) => (
                               <div 
-                                key={`pyq-${paper.id}`}
+                                key={`pyq-${paper.id || idx}-${idx}`}
                                 onClick={() => handleViewPdf(paper)}
                                 className="glass-card rounded-2xl p-4 border border-white/5 hover:border-white/10 transition-all cursor-pointer group flex items-center justify-between"
                               >
@@ -1009,9 +1009,9 @@ export default function StudentApp() {
                   renderEmptyState('Practice Materials', 'fa-crosshairs')
                 ) : (
                   <div className="space-y-4">
-                    {practiceMaterials.map(item => (
+                    {practiceMaterials.map((item, idx) => (
                       <div 
-                        key={`practice-${item.id}`}
+                        key={`practice-${item.id || idx}-${idx}`}
                         onClick={() => item.pdf_url && handleViewPdf({ ...item, title: item.chapter_name })}
                         className="glass-card rounded-2xl p-4 border border-white/5 hover:border-white/10 transition-all cursor-pointer flex justify-between items-center group"
                       >
@@ -1050,9 +1050,9 @@ export default function StudentApp() {
                   renderEmptyState('Formula Sheets', 'fa-file-lines')
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    {formulaSheets.map(sheet => (
+                    {formulaSheets.map((sheet, idx) => (
                       <div 
-                        key={`formula-${sheet.id}`}
+                        key={`formula-${sheet.id || idx}-${idx}`}
                         onClick={() => handleViewPdf(sheet)}
                         className="glass-card rounded-2xl p-4 border border-white/5 hover:border-[#FF4D7A]/30 transition-all cursor-pointer flex items-center justify-between group"
                       >
@@ -1088,9 +1088,9 @@ export default function StudentApp() {
                   renderEmptyState('Mind Maps', 'fa-network-wired')
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {mindMaps.map(map => (
+                    {mindMaps.map((map, idx) => (
                       <div 
-                        key={`mindmap-${map.id}`}
+                        key={`mindmap-${map.id || idx}-${idx}`}
                         onClick={() => handleViewPdf({ ...map, pdf_url: map.image_url })}
                         className="glass-card rounded-[22px] overflow-hidden border border-white/5 hover:border-[#FF4D7A]/30 transition-all cursor-pointer group"
                       >
@@ -1170,8 +1170,8 @@ export default function StudentApp() {
 
                     {/* Timeline List of Events */}
                     <div className="space-y-4 relative pl-4 border-l border-white/5">
-                      {timelineEvents.map(event => (
-                        <div key={`event-${event.id}`} className="relative">
+                      {timelineEvents.map((event, idx) => (
+                        <div key={`event-${event.id || idx}-${idx}`} className="relative">
                           {/* Left bullet point */}
                           <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#FF4D7A] border border-[#070B14] glow-pulse"></span>
                           
@@ -1222,9 +1222,9 @@ export default function StudentApp() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {materials.filter(m => savedData.some(s => s.material_id === m.id)).map(item => (
+                    {materials.filter(m => savedData.some(s => s.material_id === m.id)).map((item, idx) => (
                       <div 
-                        key={`saved-mat-${item.id}`}
+                        key={`saved-mat-${item.id || idx}-${idx}`}
                         onClick={() => handleViewPdf(item)}
                         className="glass-card rounded-2xl p-4 flex items-center justify-between border border-white/5 hover:border-white/10 transition-all cursor-pointer group"
                       >
@@ -1271,8 +1271,8 @@ export default function StudentApp() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {notifications.map(alert => (
-                      <div key={`alert-${alert.id}`} className="glass-card rounded-2xl p-4 border border-white/5 transition-all">
+                    {notifications.map((alert, idx) => (
+                      <div key={`alert-${alert.id || idx}-${idx}`} className="glass-card rounded-2xl p-4 border border-white/5 transition-all">
                         <div className="flex justify-between items-start mb-2">
                           <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${alert.type === 'class' ? 'bg-[#7C3AED]/20 text-[#7C3AED]' : alert.type === 'test' ? 'bg-[#FF4D7A]/20 text-[#FF4D7A]' : 'bg-[#3B82F6]/20 text-[#3B82F6]'}`}>
                             {alert.type}
@@ -1398,9 +1398,9 @@ export default function StudentApp() {
                   </div>
                 ) : (
                   <div className="space-y-3.5">
-                    {getFilteredItems().map((item: any) => (
+                    {getFilteredItems().map((item: any, idx) => (
                       <div 
-                        key={`${item.route || 'doc'}-${item.id}`}
+                        key={`${item.route || 'doc'}-${item.id || idx}-${idx}`}
                         onClick={() => {
                           if (item.pdf_url) handleViewPdf(item);
                           else if (item.duration_mins) handleStartTest(item);

@@ -529,8 +529,8 @@ export default function AdminPanel() {
                 {[...materials].length === 0 ? (
                   <p className="p-8 text-center text-xs text-[#B3B3B3]">Database Inventory is currently empty. Go to the upload center to release files.</p>
                 ) : (
-                  materials.map(m => (
-                    <div key={`admin-mat-${m.id}`} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors gap-4">
+                  materials.map((m, idx) => (
+                    <div key={`admin-mat-${m.id || idx}-${idx}`} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors gap-4">
                       <div className="flex items-center gap-4.5 w-[75%] min-w-0">
                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#FF4D7A] text-sm border border-white/5 shrink-0 shadow-inner">
                           <i className="fa-solid fa-file-pdf"></i>
