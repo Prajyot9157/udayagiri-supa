@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Student Learning Hub</title>
+    
+    <!-- Firebase Compat SDKs (Kept for Realtime Database / study materials) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <!-- Supabase JS SDK (Added for Authentication and User Data) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        appBg: '#090a10',
+                        appCard: '#15161e',
+                        appCardHover: '#1c1d26',
+                        appPink: '#f43f5e',
+                        appPinkDark: '#e11d48',
+                        textMuted: '#8b8d9c'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-in-right { animation: slideInRight 0.3s ease forwards; }
+        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+        .app-container { 
+            width: 100%; 
+            max-width: 1200px; 
+            height: 100%; 
+            position: relative; 
+            background: #090a10; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.8); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+        }
+
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        #sidebar.open { transform: translateX(0); }
+    </style>
+</head>
+<body>
+
+    <div id="app-wrapper" class="app-container">
+
+        <!-- Sidebar Drawer -->
+        <div id="sidebar" class="absolute inset-y-0 left-0 w-64 bg-appCard border-r border-gray-800 transform -translate-x-full z-[100] flex flex-col">
+            <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-[#0d0e15]">
+                <div class="flex items-center gap-3">
+                    <img src="https://res.cloudinary.com/dygxni81n/image/upload/v1781399677/file_0000000016d0720b90d59b1433db483e_hhq2p2.png" alt="Logo" class="w-10 h-10 rounded-full border-2 border-appPink/40 object-cover shadow-lg">
+                    <h2 class="text-white font-bold text-lg leading-tight">Learning<br><span class="text-xs font-medium text-appPink">Hub</span></h2>
+                </div>
+                <button onclick="toggleSidebar()" class="text-textMuted hover:text-white w-8 h-8 flex items-center justify-center rounded-full bg-gray-800/50"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-2">
+                <button onclick="toggleSidebar(); switchTab('profile')" class="w-full text-left p-3.5 rounded-xl hover:bg-gray-800 text-white font-medium flex items-center gap-4 transition-colors"><i class="fa-solid fa-user text-appPink w-5 text-center"></i> My Profile</button>
+                <button onclick="toggleSidebar(); switchTab('saved')" class="w-full text-left p-3.5 rounded-xl hover:bg-gray-800 text-white font-medium flex items-center gap-4 transition-colors"><i class="fa-solid fa-bookmark text-appPink w-5 text-center"></i> Saved Items</button>
+                <button onclick="toggleSidebar(); switchTab('performance')" class="w-full text-left p-3.5 rounded-xl hover:bg-gray-800 text-white font-medium flex items-center gap-4 transition-colors"><i class="fa-solid fa-chart-line text-appPink w-5 text-center"></i> My Performance</button>
+                <button onclick="toggleSidebar(); switchTab('calendar')" class="w-full text-left p-3.5 rounded-xl hover:bg-gray-800 text-white font-medium flex items-center gap-4 transition-colors"><i class="fa-solid fa-calendar-days text-appPink w-5 text-center"></i> Class Timeline</button>
+                <hr class="border-gray-800 my-2">
+                <button onclick="reloadApp()" class="w-full text-left p-3.5 rounded-xl hover:bg-gray-800 text-white font-medium flex items-center gap-4 transition-colors"><i class="fa-solid fa-rotate-right text-appPink w-5 text-center"></i> Refresh Data</button>
+                <button onclick="shareApp()" class="w-full text-left p-3.5 rounded-xl hover:bg-gray-800 text-white font-medium flex items-center gap-4 transition-colors"><i class="fa-solid fa-share-nodes text-appPink w-5 text-center"></i> Share App</button>
+            </div>
+            <div class="p-4 border-t border-gray-800 text-xs text-textMuted text-center bg-[#0d0e15]">
+                Student Learning App<br>Version 2.5.0
+            </div>
+        </div>
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="absolute inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden opacity-0 transition-opacity"></div>
+
+        <!-- Header -->
+        <header id="main-header" class="pt-8 pb-4 px-5 flex justify-between items-center bg-appBg z-10 shrink-0 border-b border-gray-800/50 hidden">
+            <div class="flex items-center gap-3">
+                <button id="btn-back" onclick="goBack()" class="hidden text-white text-xl pr-2"><i class="fa-solid fa-arrow-left"></i></button>
+                <div class="flex items-center gap-3" id="main-header-content">
+                    <i class="fa-solid fa-bars text-xl text-white/90 cursor-pointer hover:text-appPink transition-colors mr-1" id="menu-icon" onclick="toggleSidebar()"></i>
+                    <img src="https://res.cloudinary.com/dygxni81n/image/upload/v1781399677/file_0000000016d0720b90d59b1433db483e_hhq2p2.png" alt="Logo" class="w-8 h-8 rounded-full border border-appPink/30 object-cover shadow-sm hidden sm:block">
+                    <h1 id="header-title" class="text-lg font-bold text-white tracking-wide truncate max-w-[200px] md:max-w-none">
+                        <span id="header-title-main">Loading</span> <span class="text-appPink text-sm font-semibold">Hub</span>
+                    </h1>
+                </div>
+            </div>
+            <div class="flex gap-4 text-xl text-white/90 shrink-0">
+                <i class="fa-solid fa-gift hover:text-appPink transition-colors cursor-pointer"></i>
+                <div class="relative cursor-pointer hover:text-appPink transition-colors">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-appPink rounded-full border border-appBg"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Views Area -->
+        <div class="flex-1 overflow-hidden relative">
+
+            <!-- VIEW: LOADING -->
+            <main id="view-loading" class="h-full w-full flex flex-col items-center justify-center bg-appBg app-view z-[70] absolute inset-0">
+                <div class="relative w-20 h-20 flex items-center justify-center mb-4">
+                    <div class="absolute inset-0 border-4 border-appPink border-t-transparent rounded-full animate-spin"></div>
+                    <i class="fa-solid fa-graduation-cap text-3xl text-white"></i>
+                </div>
+                <h2 class="text-lg font-bold text-white tracking-widest uppercase text-sm animate-pulse">Loading Platform</h2>
+            </main>
+
+            <!-- VIEW: LOGIN -->
+            <main id="view-login" class="h-full overflow-y-auto hide-scrollbar app-view hidden fade-in flex flex-col items-center justify-center px-6 w-full absolute inset-0 bg-appBg z-[60]">
+                <div class="w-full max-w-md bg-appCard border border-gray-800 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-appPink/10 rounded-bl-full blur-3xl"></div>
+                    <div class="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-tr-full blur-3xl"></div>
+                    
+                    <img src="https://res.cloudinary.com/dygxni81n/image/upload/v1781399677/file_0000000016d0720b90d59b1433db483e_hhq2p2.png" alt="Logo" class="w-20 h-20 rounded-full border-2 border-appPink/40 object-cover shadow-[0_0_20px_rgba(244,63,94,0.3)] mx-auto mb-6 relative z-10">
+                    <h2 class="text-2xl font-bold text-white mb-2 relative z-10">Welcome Back!</h2>
+                    <p class="text-sm text-textMuted mb-8 relative z-10">Sign in to access your customized learning materials and track your progress.</p>
+                    
+                    <button onclick="signInWithGoogle()" class="w-full bg-white hover:bg-gray-100 text-gray-900 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-lg relative z-10">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" class="w-5 h-5">
+                        Continue with Google
+                    </button>
+                </div>
+            </main>
+
+            <!-- VIEW: ONBOARDING -->
+            <main id="view-onboarding" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden fade-in px-6 flex flex-col justify-center w-full absolute inset-0 bg-appBg z-[60]">
+                <div class="w-full max-w-md mx-auto">
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-appCard border border-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4 text-appPink text-2xl shadow-lg">
+                            <i class="fa-solid fa-user-pen"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white mb-2">Complete Your Profile</h2>
+                        <p class="text-sm text-textMuted">Just a few details to personalize your experience.</p>
+                    </div>
+                    
+                    <div class="space-y-4 bg-appCard border border-gray-800 p-6 rounded-3xl shadow-xl">
+                        <div>
+                            <label class="text-xs font-semibold text-textMuted mb-1.5 block">Full Name</label>
+                            <input type="text" id="ob-name" class="w-full bg-[#090a10] border border-gray-800 rounded-xl px-4 py-3.5 text-sm text-white focus:border-appPink outline-none transition-colors" placeholder="Enter your name">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-textMuted mb-1.5 block">Phone Number (Optional)</label>
+                            <input type="tel" id="ob-phone" class="w-full bg-[#090a10] border border-gray-800 rounded-xl px-4 py-3.5 text-sm text-white focus:border-appPink outline-none transition-colors" placeholder="Enter phone number">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-textMuted mb-1.5 block">Select Your Class / Target</label>
+                            <select id="ob-class" class="w-full bg-[#090a10] border border-gray-800 rounded-xl px-4 py-3.5 text-sm text-white focus:border-appPink outline-none transition-colors appearance-none cursor-pointer">
+                                <option value="" disabled selected>Choose your class</option>
+                                <option value="Class 9">Class 9</option>
+                                <option value="Class 10">Class 10</option>
+                                <option value="Class 11">Class 11</option>
+                                <option value="MHT CET">MHT CET Target</option>
+                            </select>
+                        </div>
+                        
+                        <button onclick="submitOnboarding()" class="w-full bg-appPink hover:bg-appPinkDark text-white font-bold py-3.5 rounded-xl shadow-lg shadow-appPink/20 transition-colors mt-6 flex justify-center items-center gap-2">
+                            Start Learning <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </main>
+            
+            <!-- VIEW: HOME (Dashboard) -->
+            <main id="view-home" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden fade-in">
+                <!-- Greeting Card -->
+                <div class="mx-5 mt-4 p-5 rounded-3xl bg-gradient-to-br from-[#2a1738] to-appCard relative overflow-hidden border border-white/5 shadow-lg max-w-4xl xl:mx-auto">
+                    <div class="relative z-10">
+                        <h2 class="text-xl font-bold text-white mb-1">Hello, <span id="greeting-name">Student</span> <span class="text-yellow-400">👋</span></h2>
+                        <p class="text-xs text-gray-400 mb-5" id="greeting-subtitle">Access all your study materials here.</p>
+                        
+                        <div class="flex gap-6 text-left">
+                            <div>
+                                <div class="text-xs text-appPink mb-1 flex items-center gap-1.5"><i class="fa-solid fa-layer-group text-[10px]"></i> Total Materials</div>
+                                <div class="font-bold text-2xl text-white" id="stat-total">0</div>
+                            </div>
+                            <div class="w-px h-10 bg-white/10 my-auto"></div>
+                            <div>
+                                <div class="text-xs text-appPink mb-1 flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-[10px]"></i> New This Week</div>
+                                <div class="font-bold text-2xl text-white" id="stat-recent">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right Decorative Button -->
+                    <div class="absolute right-0 top-0 bottom-0 w-28 bg-gradient-to-l from-[#361e47] to-transparent flex flex-col items-center justify-center border-l border-white/5 cursor-pointer hover:bg-white/5 transition-colors" onclick="switchTab('notes')">
+                        <img src="https://res.cloudinary.com/dygxni81n/image/upload/v1781399677/file_0000000016d0720b90d59b1433db483e_hhq2p2.png" alt="Materials Logo" class="w-12 h-12 rounded-full border-2 border-appPink/40 object-cover shadow-[0_0_15px_rgba(244,63,94,0.3)] mb-1">
+                        <div class="text-[10px] text-center font-bold text-white mt-1">Materials</div>
+                    </div>
+                </div>
+
+                <!-- Quick Access Grid -->
+                <div class="px-5 mt-6 max-w-4xl xl:mx-auto">
+                    <h3 class="text-sm font-semibold text-white mb-4">Quick Access</h3>
+                    <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-y-6 gap-x-2">
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('live')">
+                            <div class="w-14 h-14 rounded-2xl bg-appCard flex items-center justify-center text-appPink text-xl group-hover:bg-[#2a1738] transition-colors"><i class="fa-solid fa-tv"></i></div>
+                            <span class="text-[10px] text-gray-400 font-medium whitespace-nowrap">Live Classes</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('tests')">
+                            <div class="w-14 h-14 rounded-2xl bg-appCard flex items-center justify-center text-appPink text-xl group-hover:bg-[#2a1738] transition-colors"><i class="fa-solid fa-file-pen"></i></div>
+                            <span class="text-[10px] text-gray-400 font-medium whitespace-nowrap">Tests</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('notes')">
+                            <div class="w-14 h-14 rounded-2xl bg-[#2a1738] border border-appPink/30 flex items-center justify-center text-appPink text-xl shadow-inner"><i class="fa-solid fa-book"></i></div>
+                            <span class="text-[10px] text-white font-medium whitespace-nowrap">Notes</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('pyq')">
+                            <div class="w-14 h-14 rounded-2xl bg-appCard flex items-center justify-center text-appPink text-xl group-hover:bg-[#2a1738] transition-colors"><i class="fa-solid fa-bullseye"></i></div>
+                            <span class="text-[10px] text-gray-400 font-medium whitespace-nowrap">PYQ Bank</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('practice')">
+                            <div class="w-14 h-14 rounded-2xl bg-appCard flex items-center justify-center text-appPink text-xl group-hover:bg-[#2a1738] transition-colors"><i class="fa-solid fa-crosshairs"></i></div>
+                            <span class="text-[10px] text-gray-400 font-medium whitespace-nowrap">Practice</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('formula')">
+                            <div class="w-14 h-14 rounded-2xl bg-appCard flex items-center justify-center text-appPink text-xl group-hover:bg-[#2a1738] transition-colors"><i class="fa-solid fa-file-lines"></i></div>
+                            <span class="text-[10px] text-gray-400 font-medium whitespace-nowrap">Formula Sheet</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('mindmaps')">
+                            <div class="w-14 h-14 rounded-2xl bg-appCard flex items-center justify-center text-appPink text-xl group-hover:bg-[#2a1738] transition-colors"><i class="fa-solid fa-network-wired"></i></div>
+                            <span class="text-[10px] text-gray-400 font-medium whitespace-nowrap">Mind Maps</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-2 cursor-pointer group" onclick="switchTab('calendar')">
+                            <div class="w-14 h-14 rounded-2xl bg-appCard flex items-center justify-center text-appPink text-xl group-hover:bg-[#2a1738] transition-colors shadow-[0_0_15px_rgba(244,63,94,0.15)]"><i class="fa-solid fa-calendar-days"></i></div>
+                            <span class="text-[10px] text-appPink font-bold whitespace-nowrap">Timeline</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Added Materials -->
+                <div class="mt-8 max-w-4xl xl:mx-auto">
+                    <div class="px-5 flex justify-between items-end mb-4">
+                        <h3 class="text-sm font-semibold text-white">Recently Added</h3>
+                    </div>
+                    <div class="flex overflow-x-auto hide-scrollbar px-5 gap-4 pb-2" id="home-recent-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </main>
+
+            <!-- VIEW: CALENDAR TIMELINE -->
+            <main id="view-calendar" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden fade-in flex-col max-w-5xl mx-auto w-full">
+                <div class="bg-appCard border-b border-gray-800 shrink-0 px-5 py-4">
+                    <h3 class="text-white font-bold text-sm mb-1">Class Timeline</h3>
+                    <p class="text-xs text-textMuted mb-4">See what was taught on any given day</p>
+                    
+                    <div class="flex overflow-x-auto hide-scrollbar gap-3 pb-2" id="calendar-date-strip">
+                        <!-- Dates populated via JS -->
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto hide-scrollbar px-5 pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 content-start" id="calendar-content-list">
+                    <!-- Daily content populated via JS -->
+                </div>
+            </main>
+
+            <!-- VIEW: CATEGORY SUBJECTS -->
+            <main id="view-category-subjects" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden fade-in px-5 max-w-5xl mx-auto w-full">
+                <div class="flex items-center gap-3 mb-6 mt-4">
+                    <div class="flex-1 bg-appCard border border-gray-800 rounded-xl px-4 py-3 flex items-center gap-3 focus-within:border-appPink transition-colors">
+                        <i class="fa-solid fa-magnifying-glass text-textMuted text-sm"></i>
+                        <input type="text" placeholder="Search subjects..." class="bg-transparent border-none outline-none text-sm text-white w-full placeholder-textMuted">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="subject-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </main>
+
+            <!-- VIEW: SUBJECT DETAIL -->
+            <main id="view-subject-detail" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden slide-in-right flex-col max-w-5xl mx-auto w-full">
+                <div class="px-5 flex items-center gap-4 mb-4 mt-4">
+                    <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg shrink-0" id="detail-subj-icon-container">
+                        <i class="fa-solid fa-atom text-white" id="detail-subj-icon"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white leading-tight" id="detail-subj-title">Physics Items</h2>
+                        <p class="text-xs text-textMuted mt-0.5" id="detail-subj-count">0 Items</p>
+                    </div>
+                </div>
+                <div class="px-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 content-start flex-1 overflow-y-auto hide-scrollbar" id="detail-pdf-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </main>
+
+            <!-- VIEW: SAVED ITEMS -->
+            <main id="view-saved" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden fade-in px-5 max-w-5xl mx-auto w-full">
+                <h2 class="text-lg font-bold text-white mt-4 mb-4">Saved Materials</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 content-start" id="saved-list-container">
+                    <!-- Populated dynamically -->
+                </div>
+            </main>
+
+            <!-- VIEW: MY PERFORMANCE -->
+            <main id="view-performance" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden fade-in px-5 max-w-3xl mx-auto w-full">
+                <h2 class="text-lg font-bold text-white mt-4 mb-6">My Performance</h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-appCard border border-gray-800 rounded-2xl p-4 text-center shadow-lg">
+                        <div class="text-3xl font-black text-white" id="perf-tests-taken">0</div>
+                        <div class="text-[10px] text-textMuted uppercase tracking-wider font-bold mt-1">Tests Taken</div>
+                    </div>
+                    <div class="bg-appCard border border-gray-800 rounded-2xl p-4 text-center shadow-lg">
+                        <div class="text-3xl font-black text-appPink" id="perf-avg-score">0%</div>
+                        <div class="text-[10px] text-textMuted uppercase tracking-wider font-bold mt-1">Completion %</div>
+                    </div>
+                    <div class="bg-appCard border border-gray-800 rounded-2xl p-4 text-center shadow-lg">
+                        <div class="text-3xl font-black text-blue-400" id="perf-materials-read">0</div>
+                        <div class="text-[10px] text-textMuted uppercase tracking-wider font-bold mt-1">Materials Read</div>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-semibold text-white mb-3">Subject Wise Progress</h3>
+                <div class="space-y-5 bg-appCard border border-gray-800 rounded-2xl p-5 mb-8 shadow-lg" id="perf-subject-mastery">
+                    <!-- Populated Dynamically -->
+                </div>
+            </main>
+
+            <!-- Profile View -->
+            <main id="view-profile" class="h-full overflow-y-auto hide-scrollbar pb-6 app-view hidden fade-in px-5 w-full">
+                <div class="flex flex-col items-center mt-8 mb-8">
+                    <img id="profile-picture" src="https://res.cloudinary.com/dygxni81n/image/upload/v1781399677/file_0000000016d0720b90d59b1433db483e_hhq2p2.png" alt="Profile Logo" class="w-24 h-24 rounded-full border-4 border-appCard shadow-2xl object-cover mb-4">
+                    <h2 id="profile-name" class="text-2xl font-bold text-white">Student</h2>
+                    <p id="profile-class" class="text-sm text-appPink font-medium mt-1">MHT CET Target</p>
+                </div>
+                
+                <div class="space-y-3 w-full max-w-lg mx-auto">
+                    <button onclick="switchTab('saved')" class="w-full bg-appCard border border-gray-800 hover:border-gray-700 p-4 rounded-xl flex items-center justify-between text-white transition-colors">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-bookmark text-appPink w-5 text-center"></i> Saved Items</div>
+                        <i class="fa-solid fa-chevron-right text-textMuted text-xs"></i>
+                    </button>
+                    <button onclick="switchTab('performance')" class="w-full bg-appCard border border-gray-800 hover:border-gray-700 p-4 rounded-xl flex items-center justify-between text-white transition-colors">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-chart-line text-appPink w-5 text-center"></i> My Performance</div>
+                        <i class="fa-solid fa-chevron-right text-textMuted text-xs"></i>
+                    </button>
+                    <button onclick="switchTab('calendar')" class="w-full bg-appCard border border-gray-800 hover:border-gray-700 p-4 rounded-xl flex items-center justify-between text-white transition-colors">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-calendar-check text-appPink w-5 text-center"></i> Study Timeline</div>
+                        <i class="fa-solid fa-chevron-right text-textMuted text-xs"></i>
+                    </button>
+                    
+                    <button onclick="logOut()" class="w-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 p-4 rounded-xl flex items-center justify-between text-red-500 transition-colors mt-8">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Sign Out</div>
+                    </button>
+                </div>
+            </main>
+
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav id="main-nav" class="shrink-0 h-[70px] bg-[#0c0d14] border-t border-gray-800 flex items-center justify-around z-20 pb-1 w-full relative hidden">
+            <button onclick="switchTab('home')" class="nav-btn active flex flex-col items-center gap-1 text-appPink w-16" data-tab="home">
+                <i class="fa-solid fa-house text-xl"></i>
+                <span class="text-[10px] font-medium mt-0.5">Home</span>
+            </button>
+            <button onclick="switchTab('tests')" class="nav-btn flex flex-col items-center gap-1 text-textMuted hover:text-white w-16 transition-colors" data-tab="tests">
+                <i class="fa-solid fa-file-pen text-xl"></i>
+                <span class="text-[10px] font-medium mt-0.5">Tests</span>
+            </button>
+            <button onclick="switchTab('notes')" class="nav-btn flex flex-col items-center gap-1 text-textMuted hover:text-white w-16 transition-colors" data-tab="notes">
+                <i class="fa-solid fa-book text-xl"></i>
+                <span class="text-[10px] font-medium mt-0.5">Notes</span>
+            </button>
+            <button onclick="switchTab('profile')" class="nav-btn flex flex-col items-center gap-1 text-textMuted hover:text-white w-16 transition-colors" data-tab="profile">
+                <i class="fa-solid fa-user text-xl"></i>
+                <span class="text-[10px] font-medium mt-0.5">Profile</span>
+            </button>
+        </nav>
+
+        <!-- PDF Preview Modal -->
+        <div id="modal-preview" class="hidden absolute inset-0 z-[80] bg-appBg flex flex-col fade-in">
+            <div class="h-14 shrink-0 flex items-center justify-between px-4 bg-appCard border-b border-gray-800 shadow-md relative z-20">
+                <div class="flex items-center gap-3 w-[80%]">
+                    <span id="preview-icon-wrapper"><i class="fa-solid fa-file-pdf text-appPink text-lg"></i></span>
+                    <h3 class="text-white font-bold text-sm truncate" id="preview-title">Document Preview</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openExternalPreviewLink()" title="Open externally" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-800 text-textMuted hover:text-white transition-colors">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </button>
+                    <button onclick="closePreview()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-800 text-textMuted hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 w-full relative bg-[#12131a]">
+                <div id="preview-loader" class="absolute inset-0 flex flex-col items-center justify-center text-appPink z-0">
+                    <i class="fa-solid fa-spinner fa-spin text-3xl mb-3"></i>
+                    <p class="text-xs text-textMuted">Loading preview...</p>
+                </div>
+                <iframe id="preview-iframe" class="w-full h-full border-none z-10 relative bg-transparent" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen onload="document.getElementById('preview-loader').classList.add('hidden')"></iframe>
+            </div>
+        </div>
+
+        <!-- Zoom Modal -->
+        <div id="modal-zoom" class="hidden absolute inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-center justify-center px-6">
+            <div class="bg-appCard border border-gray-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl fade-in text-center relative">
+                <div class="w-16 h-16 bg-[#2D8CFF]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#2D8CFF] text-3xl">
+                    <i class="fa-solid fa-video"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-1" id="zoom-topic">Live Class</h3>
+                <p class="text-xs text-textMuted mb-6" id="zoom-subject">Subject Info</p>
+
+                <div class="bg-[#090a10] border border-gray-800 rounded-2xl p-4 space-y-3 text-left mb-6 font-mono text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="text-textMuted">Meeting ID:</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white font-bold" id="zoom-id">--- --- ----</span>
+                            <button onclick="copyToClipboard('zoom-id')" class="text-appPink hover:text-white p-1"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-textMuted">Passcode:</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white font-bold" id="zoom-passcode">------</span>
+                            <button onclick="copyToClipboard('zoom-passcode')" class="text-appPink hover:text-white p-1"><i class="fa-regular fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="closeZoomModal()" class="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold transition-all">Cancel</button>
+                    <a id="zoom-join-btn" href="#" target="_blank" class="flex-1 py-3 bg-[#2D8CFF] hover:bg-[#1a75e8] text-white rounded-xl font-bold shadow-lg shadow-[#2D8CFF]/20 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-play"></i> Join Zoom
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast" class="absolute top-4 left-1/2 -translate-x-1/2 z-[110] px-4 py-2.5 rounded-full bg-appCard border border-gray-700 shadow-2xl text-sm font-medium text-white flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-[-20px] max-w-xs w-max">
+            <i class="fa-solid fa-circle-check text-appPink" id="toast-icon"></i>
+            <span id="toast-msg" class="truncate">Success</span>
+        </div>
+
+    </div>
+
+    <script>
+        // --- FIREBASE CONFIGURATION (Maintained purely for reading Database Materials) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpG-jibUuhZbqzqHCDR7PeSOddxoNF4sg",
+            authDomain: "studiment-tracking.firebaseapp.com",
+            databaseURL: "https://studiment-tracking-default-rtdb.firebaseio.com",
+            projectId: "studiment-tracking"
+        };
+        
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const refMaterials = db.ref('study_text_entries');
+
+
+        // --- SUPABASE CONFIGURATION (For Auth & User Onboarding) ---
+        // IMPORTANT: Replace these with your actual Supabase URL and Anon Key from your project dashboard
+        const SUPABASE_URL = "https://kwqlrxjvxyxajfhkuajj.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3cWxyeGp2eHl4YWpmaGt1YWpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MzA3NjcsImV4cCI6MjA5NzAwNjc2N30.rN24yvnTZbkqcJZBgDzqpN3Pt_ANhl_R-RyRIPf1Wso";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+        // --- APP & AUTH STATE ---
+        const state = {
+            currentTab: 'loading',
+            currentCategory: 'notes', 
+            selectedSubject: null,
+            selectedCalendarDate: null, 
+            activePreviewLink: null,
+            allMaterials: [],
+        };
+        
+        let currentUser = null;
+        let currentUserData = null;
+
+        // Local Storage for Bookmarks and Completed Items
+        let savedItems = JSON.parse(localStorage.getItem('mhtCetSavedItems')) || [];
+        let completedItems = JSON.parse(localStorage.getItem('mhtCetCompletedItems')) || [];
+
+        // --- SUPABASE AUTHENTICATION ENGINE ---
+        const handleAuthSession = async (session) => {
+            if (session && session.user) {
+                currentUser = session.user;
+                
+                // Fetch user data from Supabase "users" table
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('uid', currentUser.id)
+                    .single();
+
+                if (data) {
+                    currentUserData = data;
+                    updateDynamicUI();
+                    // Route them to home after loading is done
+                    if (['loading', 'login', 'onboarding'].includes(state.currentTab)) {
+                        pushHistoryState('home');
+                        renderView('home');
+                    }
+                } else {
+                    // User exists in auth but not in DB -> Start onboarding
+                    document.getElementById('ob-name').value = currentUser.user_metadata?.full_name || '';
+                    pushHistoryState('onboarding');
+                    renderView('onboarding');
+                }
+            } else {
+                currentUser = null;
+                currentUserData = null;
+                pushHistoryState('login');
+                renderView('login');
+            }
+        };
+
+        // Check initial auth state (Fixed error handling)
+        supabaseClient.auth.getSession().then(({ data, error }) => {
+            if (error) {
+                console.error("Auth Session Error:", error);
+                handleAuthSession(null);
+            } else {
+                handleAuthSession(data?.session);
+            }
+        });
+
+        // Listen for Auth changes dynamically
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+            handleAuthSession(session);
+        });
+
+        const signInWithGoogle = async () => {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+            });
+            if (error) showToast(error.message, true);
+        };
+
+        const logOut = async () => {
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) showToast(error.message, true);
+            else showToast("Signed out successfully");
+        };
+
+        const submitOnboarding = async () => {
+            const name = document.getElementById('ob-name').value;
+            const phone = document.getElementById('ob-phone').value;
+            const userClass = document.getElementById('ob-class').value;
+            
+            if(!name || !userClass) {
+                showToast("Name and Class are required!", true);
+                return;
+            }
+            
+            const userData = {
+                uid: currentUser.id, // Primary Key in your Supabase 'users' table
+                name, 
+                phone, 
+                classSelection: userClass,
+                email: currentUser.email,
+            };
+            
+            // Save to Supabase
+            const { error } = await supabaseClient.from('users').upsert(userData);
+            
+            if (error) {
+                showToast(error.message, true);
+            } else {
+                currentUserData = userData;
+                updateDynamicUI();
+                pushHistoryState('home');
+                renderView('home');
+                showToast("Welcome aboard!");
+            }
+        };
+
+        const updateDynamicUI = () => {
+            if(!currentUserData) return;
+            
+            // Header dynamically reflects class
+            document.getElementById('header-title-main').innerText = currentUserData.classSelection;
+            
+            // Greeting on Dashboard
+            document.getElementById('greeting-name').innerText = currentUserData.name.split(' ')[0]; // First name
+            document.getElementById('greeting-subtitle').innerText = `Your ${currentUserData.classSelection} study materials are ready.`;
+            
+            // Profile tab injection
+            document.getElementById('profile-name').innerText = currentUserData.name;
+            document.getElementById('profile-class').innerText = currentUserData.classSelection;
+            
+            // Handle Profile Picture (Supabase stores it in user_metadata)
+            if (currentUser && currentUser.user_metadata?.avatar_url) {
+                document.getElementById('profile-picture').src = currentUser.user_metadata.avatar_url;
+            }
+        };
+
+
+        // --- UI METADATA ---
+        const subjectMeta = {
+            "Physics": { icon: "fa-atom", color: "bg-[#4834df]" },
+            "Chemistry": { icon: "fa-flask", color: "bg-[#e84393]" },
+            "Mathematics": { icon: "fa-superscript", color: "bg-[#6c5ce7]" },
+            "Biology": { icon: "fa-leaf", color: "bg-[#d63031]" },
+            "Inorganic Chemistry": { icon: "fa-cubes", color: "bg-[#8e44ad]" },
+            "Organic Chemistry": { icon: "fa-hexagon-nodes", color: "bg-[#c0392b]" },
+            "Full Syllabus": { icon: "fa-book-open-reader", color: "bg-[#f39c12]" }
+        };
+
+        const categoryMeta = {
+            "notes": { title: "Notes", icon: "fa-book" },
+            "live": { title: "Live Classes", icon: "fa-tv" },
+            "tests": { title: "Mock Tests", icon: "fa-file-pen" },
+            "pyq": { title: "PYQ Bank", icon: "fa-bullseye" },
+            "practice": { title: "Practice Sets", icon: "fa-crosshairs" },
+            "formula": { title: "Formula Sheets", icon: "fa-file-lines" },
+            "mindmaps": { title: "Mind Maps", icon: "fa-network-wired" },
+            "dpps": { title: "DPPs", icon: "fa-list-check" }
+        };
+
+        const categoriesWithSubjects = ['notes', 'live', 'tests', 'pyq', 'practice', 'formula', 'mindmaps', 'dpps'];
+        const fallbackMeta = { icon: "fa-folder", color: "bg-gray-700" };
+
+        const getLocalYMD = (dateObj) => {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        };
+        state.selectedCalendarDate = getLocalYMD(new Date());
+
+
+        // --- HISTORY API & ROUTING ---
+        const pushHistoryState = (view, payload = {}) => {
+            history.pushState({ view, ...payload }, "", "");
+        };
+
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.view) {
+                renderView(event.state.view, event.state);
+            } else {
+                renderView('loading');
+            }
+        });
+
+        const renderView = (view, payload = {}) => {
+            // AUTH & ONBOARDING GUARDS
+            if (view !== 'login' && view !== 'loading' && !currentUser) {
+                view = 'login';
+            } else if (currentUser && !currentUserData && view !== 'loading' && view !== 'login') {
+                view = 'onboarding';
+            }
+            
+            state.currentTab = view;
+            
+            const header = document.getElementById('main-header');
+            const nav = document.getElementById('main-nav');
+            
+            // Hide header & bottom-nav during login/onboarding
+            if (['login', 'onboarding', 'loading'].includes(view)) {
+                header.classList.add('hidden');
+                nav.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+                nav.classList.remove('hidden');
+            }
+
+            // Highlight bottom nav correctly
+            const navIds = ['home', 'tests', 'notes', 'profile'];
+            if(navIds.includes(view)) {
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    const isMatch = btn.dataset.tab === view;
+                    btn.classList.toggle('text-appPink', isMatch);
+                    btn.classList.toggle('text-textMuted', !isMatch);
+                });
+            } else {
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-appPink', 'text-textMuted'));
+            }
+
+            // Hide all pages
+            document.querySelectorAll('.app-view').forEach(v => v.classList.add('hidden'));
+
+            const backBtn = document.getElementById('btn-back');
+            const menuIcon = document.getElementById('menu-icon');
+            const titleEl = document.getElementById('header-title');
+
+            if (view === 'login') {
+                document.getElementById('view-login').classList.remove('hidden');
+            }
+            else if (view === 'onboarding') {
+                document.getElementById('view-onboarding').classList.remove('hidden');
+            }
+            else if (view === 'loading') {
+                document.getElementById('view-loading').classList.remove('hidden');
+            }
+            else if (view === 'home') {
+                document.getElementById('view-home').classList.remove('hidden');
+                backBtn.classList.add('hidden');
+                menuIcon.classList.remove('hidden');
+                updateDynamicUI(); // Restores dynamic title
+            } 
+            else if (view === 'profile') {
+                document.getElementById('view-profile').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                menuIcon.classList.add('hidden');
+                titleEl.innerHTML = 'My Profile';
+            }
+            else if (view === 'calendar') {
+                document.getElementById('view-calendar').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                menuIcon.classList.add('hidden');
+                titleEl.innerHTML = 'Study Timeline';
+                renderCalendarView();
+            }
+            else if (view === 'saved') {
+                document.getElementById('view-saved').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                menuIcon.classList.add('hidden');
+                titleEl.innerHTML = 'Saved Items';
+                renderSavedItems();
+            }
+            else if (view === 'performance') {
+                document.getElementById('view-performance').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                menuIcon.classList.add('hidden');
+                titleEl.innerHTML = 'My Performance';
+                renderPerformanceStats();
+            }
+            else if (view === 'category-subjects') {
+                state.currentCategory = payload.category || 'notes';
+                document.getElementById('view-category-subjects').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                menuIcon.classList.add('hidden');
+                
+                const catMeta = categoryMeta[state.currentCategory] || { title: state.currentCategory.toUpperCase() };
+                titleEl.innerHTML = catMeta.title;
+                
+                renderCategorySubjects(state.currentCategory);
+            }
+            else if (view === 'subject-detail') {
+                state.currentCategory = payload.category;
+                state.selectedSubject = payload.subject;
+                
+                document.getElementById('view-subject-detail').classList.remove('hidden');
+                backBtn.classList.remove('hidden');
+                menuIcon.classList.add('hidden');
+                
+                titleEl.innerHTML = `${payload.subject}`;
+                renderSubjectDetail();
+            }
+        };
+
+        const switchTab = (tabId) => {
+            if (categoriesWithSubjects.includes(tabId)) {
+                pushHistoryState('category-subjects', { category: tabId });
+                renderView('category-subjects', { category: tabId });
+            } else {
+                pushHistoryState(tabId, {});
+                renderView(tabId, {});
+            }
+        };
+
+        const goBack = () => window.history.back();
+
+        // --- SIDEBAR DRAWER ---
+        let sidebarOpen = false;
+        const toggleSidebar = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebarOpen = !sidebarOpen;
+            
+            if(sidebarOpen) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => { overlay.classList.remove('opacity-0'); sidebar.classList.add('open'); }, 10);
+            } else {
+                sidebar.classList.remove('open');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => { overlay.classList.add('hidden'); }, 300);
+            }
+        };
+
+        const reloadApp = () => {
+            toggleSidebar();
+            showToast("Fetching latest database entries...");
+            setTimeout(() => { renderHomeStats(); showToast("System fully updated"); }, 800);
+        };
+
+        const shareApp = () => {
+            toggleSidebar();
+            if (navigator.share) {
+                navigator.share({ title: 'Student Prep Hub', text: 'Explore detailed study materials!', url: window.location.href, })
+                .catch((err) => console.log('Sharing error', err));
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                showToast("Link copied to clipboard!");
+            }
+        };
+
+        // --- SAVED & COMPLETED LOGIC ---
+        const toggleSave = (id, event) => {
+            if(event) event.stopPropagation();
+            if(savedItems.includes(id)) {
+                savedItems = savedItems.filter(i => i !== id);
+                showToast("Removed from saved items");
+            } else {
+                savedItems.push(id);
+                showToast("Added to saved items!");
+            }
+            localStorage.setItem('mhtCetSavedItems', JSON.stringify(savedItems));
+            updateUIAfterAction();
+        };
+
+        const toggleComplete = (id, event) => {
+            if(event) event.stopPropagation();
+            if(completedItems.includes(id)) {
+                completedItems = completedItems.filter(i => i !== id);
+                showToast("Marked as unread");
+            } else {
+                completedItems.push(id);
+                showToast("Great! Marked as read.");
+            }
+            localStorage.setItem('mhtCetCompletedItems', JSON.stringify(completedItems));
+            updateUIAfterAction();
+            if(state.currentTab === 'performance') renderPerformanceStats();
+        };
+
+        const updateUIAfterAction = () => {
+            if (state.currentTab === 'saved') renderSavedItems();
+            else if (state.currentTab === 'subject-detail') renderSubjectDetail();
+            else if (state.currentTab === 'home') renderHomeRecents();
+            else if (state.currentTab === 'calendar') renderCalendarContent();
+        };
+
+        // --- REAL-TIME DATABASE LISTENER (Fetching Study Materials) ---
+        refMaterials.on('value', snap => {
+            const data = snap.val() || {};
+            state.allMaterials = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            state.allMaterials.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            
+            renderHomeStats();
+            renderHomeRecents();
+            
+            if (state.currentTab === 'category-subjects') renderCategorySubjects(state.currentCategory);
+            else if (state.currentTab === 'subject-detail') renderSubjectDetail();
+            else if (state.currentTab === 'calendar') renderCalendarContent();
+            else if (state.currentTab === 'saved') renderSavedItems();
+            else if (state.currentTab === 'performance') renderPerformanceStats();
+        });
+
+        // --- CALENDAR TIMELINE ENGINE ---
+        const renderCalendarView = () => {
+            renderCalendarDates();
+            renderCalendarContent();
+        };
+
+        const renderCalendarDates = () => {
+            const strip = document.getElementById('calendar-date-strip');
+            let html = '';
+            const daysToGenerate = 45;
+            const today = new Date();
+
+            for(let i = daysToGenerate - 1; i >= 0; i--) {
+                const targetDate = new Date(today);
+                targetDate.setDate(today.getDate() - i);
+                
+                const ymd = getLocalYMD(targetDate);
+                const dayName = targetDate.toLocaleDateString('en-US', { weekday: 'short' });
+                const dateNum = targetDate.getDate();
+                
+                const isSelected = state.selectedCalendarDate === ymd;
+                const baseClass = isSelected 
+                    ? 'bg-appPink text-white shadow-lg shadow-appPink/30 border-transparent' 
+                    : 'bg-appCard text-textMuted border-gray-800 hover:border-appPink/50 hover:text-white';
+
+                html += `
+                <button onclick="selectCalendarDate('${ymd}')" class="flex flex-col items-center justify-center p-2 rounded-xl border min-w-[64px] transition-all ${baseClass}">
+                    <span class="text-[10px] uppercase font-bold tracking-wider mb-1 opacity-80">${dayName}</span>
+                    <span class="text-xl font-black leading-none">${dateNum}</span>
+                </button>`;
+            }
+            strip.innerHTML = html;
+            setTimeout(() => { strip.scrollLeft = strip.scrollWidth; }, 50);
+        };
+
+        const selectCalendarDate = (ymd) => {
+            state.selectedCalendarDate = ymd;
+            renderCalendarDates(); 
+            renderCalendarContent();
+        };
+
+        const renderCalendarContent = () => {
+            const container = document.getElementById('calendar-content-list');
+            const filtered = state.allMaterials.filter(item => {
+                if(!item.timestamp) return false;
+                return getLocalYMD(new Date(item.timestamp)) === state.selectedCalendarDate;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-16 flex flex-col items-center bg-appCard border border-gray-800/50 rounded-2xl w-full">
+                        <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-2xl text-gray-600 mb-3">
+                            <i class="fa-solid fa-mug-hot"></i>
+                        </div>
+                        <h3 class="text-white font-bold mb-1">Rest Day</h3>
+                        <p class="text-xs text-textMuted max-w-[200px]">No materials or classes were added on this date.</p>
+                    </div>`;
+                return;
+            }
+            container.innerHTML = filtered.map(item => generateItemCard(item)).join('');
+        };
+
+        // --- CORE UI GENERATOR ENGINE ---
+        const renderHomeStats = () => {
+            document.getElementById('stat-total').innerText = state.allMaterials.length;
+            const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+            const recentItems = state.allMaterials.filter(item => item.timestamp > oneWeekAgo).length;
+            document.getElementById('stat-recent').innerText = recentItems;
+        };
+
+        const renderHomeRecents = () => {
+            const container = document.getElementById('home-recent-list');
+            const recent = state.allMaterials.slice(0, 5); 
+            
+            if (!recent.length) {
+                container.innerHTML = `<div class="w-full text-center py-6 text-textMuted text-sm bg-appCard rounded-xl border border-gray-800">Database is empty right now.</div>`;
+                return;
+            }
+
+            container.innerHTML = recent.map(item => {
+                const visual = getVisualProperties(item.linkType);
+                return `
+                <div class="min-w-[180px] w-[180px] sm:min-w-[220px] sm:w-[220px] bg-appCard border border-gray-800 rounded-2xl p-3 flex flex-col shrink-0 cursor-pointer hover:border-gray-600 transition-colors" onclick="handleAction('${item.id}')">
+                    <div class="w-10 h-10 ${visual.bg} rounded-lg flex items-center justify-center ${visual.color} mb-3 shadow-sm border ${visual.border}">
+                        <i class="fa-solid ${visual.icon}"></i>
+                    </div>
+                    <h4 class="text-xs font-bold text-white truncate w-full">${escapeHtml(item.topic)}</h4>
+                    <p class="text-[9px] text-textMuted truncate w-full mt-0.5">${escapeHtml(item.subject)} | ${categoryMeta[item.category]?.title || 'Notes'}</p>
+                    <div class="mt-3 pt-2 border-t border-gray-800 flex justify-between items-center gap-1.5">
+                        <span class="text-[10px] text-appPink font-bold flex-1"><i class="fa-solid ${visual.actionIcon} mr-1"></i> ${visual.actionText}</span>
+                    </div>
+                </div>
+            `}).join('');
+        };
+
+        const renderCategorySubjects = (category) => {
+            const container = document.getElementById('subject-list');
+            const subjectsToRender = ["Physics", "Chemistry", "Mathematics", "Biology", "Inorganic Chemistry", "Organic Chemistry", "Full Syllabus"];
+            
+            container.innerHTML = subjectsToRender.map(subjName => {
+                const count = state.allMaterials.filter(m => m.subject === subjName && (m.category === category || (!m.category && category === 'notes'))).length;
+                const meta = subjectMeta[subjName] || fallbackMeta;
+
+                return `
+                <div onclick="openSubject('${subjName}')" class="bg-appCard border border-gray-800 rounded-2xl p-4 flex items-center gap-4 hover:bg-gray-800 transition-colors cursor-pointer w-full">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-inner shrink-0 ${meta.color}">
+                        <i class="fa-solid ${meta.icon} text-white/90"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-bold text-white truncate">${subjName}</h3>
+                        <p class="text-[10px] text-textMuted mt-0.5">${count} items available</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-textMuted text-xs shrink-0"></i>
+                </div>`;
+            }).join('');
+        };
+
+        const openSubject = (subjName) => {
+            pushHistoryState('subject-detail', { category: state.currentCategory, subject: subjName });
+            renderView('subject-detail', { category: state.currentCategory, subject: subjName });
+        };
+
+        const renderSubjectDetail = () => {
+            const meta = subjectMeta[state.selectedSubject] || fallbackMeta;
+            
+            document.getElementById('detail-subj-icon-container').className = `w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg shrink-0 ${meta.color}`;
+            document.getElementById('detail-subj-icon').className = `fa-solid ${meta.icon} text-white/90`;
+            
+            const catTitle = categoryMeta[state.currentCategory]?.title || 'Notes';
+            document.getElementById('detail-subj-title').innerText = `${state.selectedSubject} (${catTitle})`;
+
+            let filtered = state.allMaterials.filter(m => m.subject === state.selectedSubject && (m.category === state.currentCategory || (!m.category && state.currentCategory === 'notes')));
+            document.getElementById('detail-subj-count').innerText = `${filtered.length} Items`;
+
+            const container = document.getElementById('detail-pdf-list');
+            if (!filtered.length) {
+                container.innerHTML = `<div class="col-span-full text-center py-10"><i class="fa-solid fa-folder-open text-4xl text-gray-800 mb-3"></i><p class="text-sm text-textMuted">No material uploaded in this module yet.</p></div>`;
+                return;
+            }
+            container.innerHTML = filtered.map(item => generateItemCard(item)).join('');
+        };
+
+        const renderSavedItems = () => {
+            const container = document.getElementById('saved-list-container');
+            const filtered = state.allMaterials.filter(m => savedItems.includes(m.id));
+            
+            if (!filtered.length) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-16 flex flex-col items-center">
+                        <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-3xl text-gray-600 mb-4">
+                            <i class="fa-regular fa-bookmark"></i>
+                        </div>
+                        <h3 class="text-white font-bold mb-1">No Saved Items</h3>
+                        <p class="text-xs text-textMuted max-w-[200px]">Tap the bookmark icon on any material to save it here.</p>
+                    </div>`;
+                return;
+            }
+            container.innerHTML = filtered.map(item => generateItemCard(item)).join('');
+        };
+        
+        const renderPerformanceStats = () => {
+            const completedTestsCount = completedItems.filter(id => {
+                const item = state.allMaterials.find(m => m.id === id);
+                return item && item.category === 'tests';
+            }).length;
+            document.getElementById('perf-tests-taken').innerText = completedTestsCount;
+
+            const totalItems = state.allMaterials.length;
+            const readItems = completedItems.length;
+            const completionPercent = totalItems > 0 ? Math.round((readItems / totalItems) * 100) : 0;
+            document.getElementById('perf-avg-score').innerText = completionPercent + '%';
+
+            document.getElementById('perf-materials-read').innerText = readItems;
+
+            const subjects = ["Physics", "Chemistry", "Mathematics", "Biology"];
+            let subjectHtml = '';
+            
+            subjects.forEach(sub => {
+                const subTotal = state.allMaterials.filter(m => m.subject === sub).length;
+                const subCompleted = completedItems.filter(id => {
+                    const item = state.allMaterials.find(m => m.id === id);
+                    return item && item.subject === sub;
+                }).length;
+                
+                const percent = subTotal > 0 ? Math.round((subCompleted / subTotal) * 100) : 0;
+                
+                let colorClass = 'bg-blue-500';
+                if(sub === 'Chemistry') colorClass = 'bg-pink-500';
+                else if(sub === 'Mathematics') colorClass = 'bg-purple-500';
+                else if(sub === 'Biology') colorClass = 'bg-green-500';
+
+                subjectHtml += `
+                <div>
+                    <div class="flex justify-between text-xs font-bold text-white mb-1.5">
+                        <span>${sub} <span class="text-textMuted font-medium text-[10px]">(${subCompleted}/${subTotal})</span></span>
+                        <span>${percent}%</span>
+                    </div>
+                    <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                        <div class="${colorClass} h-2.5 rounded-full transition-all duration-1000" style="width: ${percent}%"></div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('perf-subject-mastery').innerHTML = subjectHtml;
+        };
+
+        const generateItemCard = (item) => {
+            const visual = getVisualProperties(item.linkType);
+            const isSaved = savedItems.includes(item.id);
+            const saveIcon = isSaved ? 'fa-solid fa-bookmark text-appPink' : 'fa-regular fa-bookmark text-gray-400';
+            
+            const isCompleted = completedItems.includes(item.id);
+            const completeIcon = isCompleted ? 'fa-solid fa-circle-check text-green-500' : 'fa-regular fa-circle-check text-gray-500';
+            
+            return `
+            <div class="bg-appCard border ${isCompleted ? 'border-green-500/30' : 'border-gray-800'} rounded-2xl p-3.5 flex items-center gap-4 transition-colors w-full relative overflow-hidden group">
+                ${isCompleted ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500 rounded-l-2xl"></div>' : ''}
+                
+                <div class="w-10 h-10 ${visual.bg} rounded-lg flex items-center justify-center shrink-0 ${visual.color} border ${visual.border}">
+                    <i class="fa-solid ${visual.icon}"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-bold ${isCompleted ? 'text-gray-300' : 'text-white'} truncate leading-tight">${escapeHtml(item.topic)}</h4>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-[10px] text-textMuted bg-appBg px-2 py-0.5 rounded-md border border-gray-800">${escapeHtml(item.subject)}</span>
+                        ${item.size ? `<span class="text-[9px] text-gray-500">${escapeHtml(item.size)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick="toggleComplete('${item.id}', event)" title="Mark as Read" class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors shrink-0">
+                        <i class="${completeIcon} text-[13px]"></i>
+                    </button>
+                    <button onclick="toggleSave('${item.id}', event)" title="Save Item" class="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors shrink-0">
+                        <i class="${saveIcon} text-[13px]"></i>
+                    </button>
+                    <button onclick="handleAction('${item.id}')" class="px-3 py-2 ${visual.btnBg} hover:opacity-90 ${visual.btnTextColor} rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm hidden sm:flex">
+                        <i class="fa-solid ${visual.actionIcon}"></i> ${visual.actionText}
+                    </button>
+                    <button onclick="handleAction('${item.id}')" class="w-8 h-8 flex sm:hidden items-center justify-center ${visual.btnBg} hover:opacity-90 ${visual.btnTextColor} rounded-xl text-xs font-bold transition-all shadow-sm shrink-0">
+                        <i class="fa-solid ${visual.actionIcon}"></i>
+                    </button>
+                </div>
+            </div>`;
+        };
+
+        const getVisualProperties = (linkType) => {
+            switch(linkType) {
+                case 'youtube': return { bg: 'bg-red-500/10', color: 'text-red-500', border: 'border-red-500/20', icon: 'fa-play', actionIcon: 'fa-circle-play', actionText: 'Watch', btnBg: 'bg-red-500/20', btnTextColor: 'text-red-400' };
+                case 'zoom': return { bg: 'bg-[#2D8CFF]/10', color: 'text-[#2D8CFF]', border: 'border-[#2D8CFF]/20', icon: 'fa-video', actionIcon: 'fa-video', actionText: 'Join', btnBg: 'bg-[#2D8CFF]/20', btnTextColor: 'text-[#2D8CFF]' };
+                case 'pdf': default: return { bg: 'bg-rose-500/10', color: 'text-rose-500', border: 'border-rose-500/20', icon: 'fa-file-pdf', actionIcon: 'fa-eye', actionText: 'View', btnBg: 'bg-rose-500/20', btnTextColor: 'text-rose-400' };
+            }
+        };
+
+        const handleAction = (id) => {
+            const item = state.allMaterials.find(m => m.id === id);
+            if (!item) return;
+
+            if(!completedItems.includes(id)) toggleComplete(id, null);
+
+            if (item.linkType === 'zoom') openZoomModal(item);
+            else if (item.linkType === 'youtube') previewYouTube(item);
+            else previewPDF(item.code, item.topic);
+        };
+
+        const openZoomModal = (item) => {
+            document.getElementById('zoom-topic').innerText = item.topic;
+            document.getElementById('zoom-subject').innerText = item.subject;
+            document.getElementById('zoom-id').innerText = item.meetingId || 'Direct Link Only';
+            document.getElementById('zoom-passcode').innerText = item.passcode || 'N/A';
+            document.getElementById('zoom-join-btn').href = item.code;
+            document.getElementById('modal-zoom').classList.remove('hidden');
+        };
+
+        const closeZoomModal = () => document.getElementById('modal-zoom').classList.add('hidden');
+
+        const previewYouTube = (item) => {
+            const embedUrl = getYouTubeEmbedUrl(item.code);
+            if (!embedUrl) { window.open(item.code, '_blank'); return; }
+            
+            document.getElementById('preview-icon-wrapper').innerHTML = '<i class="fa-brands fa-youtube text-red-500 text-lg"></i>';
+            document.getElementById('preview-title').innerText = item.topic;
+            state.activePreviewLink = item.code; 
+            document.getElementById('modal-preview').classList.remove('hidden');
+            document.getElementById('preview-loader').classList.remove('hidden');
+            document.getElementById('preview-iframe').src = embedUrl;
+        };
+
+        const getYouTubeEmbedUrl = (url) => {
+            if (!url) return '';
+            let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            let match = url.match(regExp);
+            if (match && match[2].length === 11) return 'https://www.youtube.com/embed/' + match[2] + '?autoplay=1';
+            return '';
+        };
+
+        const previewPDF = (code, title) => {
+            if(!code) return;
+            document.getElementById('preview-icon-wrapper').innerHTML = '<i class="fa-solid fa-file-pdf text-appPink text-lg"></i>';
+            document.getElementById('preview-title').innerText = title || "Document";
+            document.getElementById('modal-preview').classList.remove('hidden');
+            document.getElementById('preview-loader').classList.remove('hidden');
+            
+            const iframe = document.getElementById('preview-iframe');
+            const loadIframe = (url) => { state.activePreviewLink = url; iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`; };
+
+            if(code.startsWith('http')) loadIframe(code);
+            else {
+                fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://server.brightclass.com/api/v1/file-storage/link-by-filecode?fileCode='+code)}`)
+                    .then(res => res.json())
+                    .then(data => { if(data && data.cdnUrl) loadIframe(data.cdnUrl); else { closePreview(); showToast("Corrupted File Code", true); }})
+                    .catch(() => { closePreview(); showToast("Stream blocked due to network fault.", true); });
+            }
+        };
+
+        const openExternalPreviewLink = () => { if(state.activePreviewLink) window.open(state.activePreviewLink, '_blank'); };
+        const closePreview = () => { document.getElementById('modal-preview').classList.add('hidden'); document.getElementById('preview-iframe').src = ""; state.activePreviewLink = null; };
+
+        // --- HELPERS ---
+        const copyToClipboard = (elementId) => {
+            navigator.clipboard.writeText(document.getElementById(elementId).innerText)
+                .then(() => showToast("Copied to clipboard!"))
+                .catch(() => showToast("Failed to copy", true));
+        };
+
+        const escapeHtml = (str) => {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, m => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[m]));
+        };
+
+        const showToast = (msg, isError = false) => {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            const icon = document.getElementById('toast-icon');
+            if(isError) icon.className = 'fa-solid fa-circle-exclamation text-red-500';
+            else icon.className = 'fa-solid fa-circle-check text-appPink';
+
+            toast.style.opacity = '1'; toast.style.transform = 'translate(-50%, 0)';
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translate(-50%, -20px)'; }, 3000);
+        };
+
+        // On Boot: Trigger the loading view immediately so it doesn't overwrite later
+        renderView('loading');
+
+    </script>
+</body>
+</html>
